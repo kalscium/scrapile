@@ -1,0 +1,12 @@
+[package]
+name = "scrapile"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ketchup = "0.1"
+logos = "0.14"
+zip = "2.1"
+json = "0.12"
+ariadne = "0.4"
+clap = "4.5"
