@@ -92,11 +92,10 @@ fn block_idx_to_id(idx: usize) -> String {
 /// it also requires a list of all the variable and list ids used in the statements
 pub fn assemble(stmts: &[Statement], variables: &[String], lists: &[String]) -> JsonValue {
     // parse statements
-    let mut blocks = Vec::new();
-    let mut stmt_blocks = stmts.iter()
-        .map(|stmt| parse_stmt(stmt, &mut blocks))
+    let mut expr_blocks = Vec::new();
+    let stmt_blocks = stmts.iter()
+        .map(|stmt| parse_stmt(stmt, &mut expr_blocks))
         .collect::<Vec<_>>();
-    blocks.append(&mut stmt_blocks); // append the generated stmt blocks onto the blocks vector
 
     // generate the full json template
     let mut json = object! {
@@ -164,11 +163,21 @@ pub fn assemble(stmts: &[Statement], variables: &[String], lists: &[String]) -> 
         y: 0,
     };
 
-    // insert rest of the blocks
-    for (i, block) in blocks.into_iter().enumerate() {
-        json["targets"][0]["blocks"][block_idx_to_id(i)] = block;
-    }
+    // insert the statement blocks
+    for (i, mut stmt_block) in stmt_blocks.into_iter().enumerate() {
+        let idx = expr_blocks.len() + i; // true block index with expr blocks included
         
+        // update the link to the next block
+        stmt_block["next"] = block_idx_to_id(idx+1).into();
+
+        // write stmt block to the main json
+        json["targets"][0]["blocks"][block_idx_to_id(idx)] = stmt_block;
+    }
+    // insert the expr blocks
+    for (i, expr_block) in expr_blocks.into_iter().enumerate() {
+        json["targets"][0]["blocks"][block_idx_to_id(i)] = expr_block;
+    }
+
     // return completed scratch json
     json
 }
@@ -191,19 +200,19 @@ pub fn write_to_zip(path: impl AsRef<Path>, json: JsonValue) -> Result<(), std::
 }
 
 /// Parses a scratch statement and outupts the generated json
-fn parse_stmt(stmt: &Statement, blocks: &mut Vec<JsonValue>) -> JsonValue {
+fn parse_stmt(stmt: &Statement, expr_blocks: &mut Vec<JsonValue>) -> JsonValue {
     use Statement as S;
 
     match stmt {
         S::PushList { ident, value } => {
             object! {
                 opcode: "data_addtolist",
-                next: block_idx_to_id(blocks.len()+1), // set the next block to a future block in the block vector
+                next: null, // gets replaced later
                 parent: null,
                 inputs: {
                     ITEM: [
                         1,
-                        parse_expr(value.clone(), blocks),
+                        parse_expr(value.clone(), expr_blocks),
                     ],
                 },
                 fields: {
@@ -222,7 +231,7 @@ fn parse_stmt(stmt: &Statement, blocks: &mut Vec<JsonValue>) -> JsonValue {
 
 /// Parses a scratch expression and outputs the generated json
 /// (requires a mutable reference to the block vector to add addtional blocks for multi-step exressions)
-fn parse_expr(expr: Expr, blocks: &mut Vec<JsonValue>) -> JsonValue {
+fn parse_expr(expr: Expr, expr_blocks: &mut Vec<JsonValue>) -> JsonValue {
     use Expr as E;
 
     match expr {
@@ -243,7 +252,7 @@ fn parse_expr(expr: Expr, blocks: &mut Vec<JsonValue>) -> JsonValue {
                 inputs: {
                     INDEX: [
                         1,
-                        parse_expr((*idx).clone(), blocks),
+                        parse_expr((*idx).clone(), expr_blocks),
                     ]
                 },
                 fields: {
@@ -255,9 +264,9 @@ fn parse_expr(expr: Expr, blocks: &mut Vec<JsonValue>) -> JsonValue {
                 shadow: false,
                 topLevel: false,
             };
-            blocks.push(json);
+            expr_blocks.push(json);
 
-            block_idx_to_id(blocks.len()-1).into()
+            block_idx_to_id(expr_blocks.len()-1).into()
         },
         E::ListLength { ident } => {
             let json = object! {
@@ -272,9 +281,9 @@ fn parse_expr(expr: Expr, blocks: &mut Vec<JsonValue>) -> JsonValue {
                     ],
                 },
             };
-            blocks.push(json);
+            expr_blocks.push(json);
 
-            block_idx_to_id(blocks.len()-1).into()
+            block_idx_to_id(expr_blocks.len()-1).into()
         }
 
         _ => todo!(),
