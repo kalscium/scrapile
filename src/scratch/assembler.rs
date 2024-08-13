@@ -1,6 +1,15 @@
 use json::{array, object, JsonValue::{self, Null}};
-use crate::scratch::block_idx_to_id;
 use super::{parse_stmt, Statement};
+
+#[inline]
+fn expr_idx_to_id(idx: usize) -> String {
+    format!("expr_idx: {idx}")
+}
+
+#[inline]
+fn stmt_idx_to_id(idx: usize) -> String {
+    format!("stmt_idx: {idx}")
+}
 
 /// The scratch equivelent of an 'assembler'; it takes in instructions that are very close to the scratch equivelant and generates the final `.sb3` project
 ///
@@ -67,7 +76,7 @@ pub fn assemble(stmts: &[Statement], variables: &[String], lists: &[String]) -> 
     // insert start block
     json["targets"][0]["blocks"]["startflag"] = object! {
         opcode: "event_whenflagclicked",
-        next: block_idx_to_id(0),
+        next: stmt_idx_to_id(0),
         parent: null,
         inputs: {},
         fields: {},
@@ -78,22 +87,20 @@ pub fn assemble(stmts: &[Statement], variables: &[String], lists: &[String]) -> 
     };
 
     // insert the statement blocks
-    for (i, mut stmt_block) in stmt_blocks.into_iter().enumerate() {
-        let idx = expr_blocks.len() + i; // true block index with expr blocks included
-        
+    for (idx, mut stmt_block) in stmt_blocks.into_iter().enumerate() {
         // update the link to the next block
-        stmt_block["next"] = block_idx_to_id(idx+1).into();
+        stmt_block["next"] = stmt_idx_to_id(idx+1).into();
         // set other boilerplate fields
         stmt_block["shadow"] = false.into();
         stmt_block["topLevel"] = false.into();
         stmt_block["parent"] = Null;
 
         // write stmt block to the main json
-        json["targets"][0]["blocks"][block_idx_to_id(idx)] = stmt_block;
+        json["targets"][0]["blocks"][stmt_idx_to_id(idx)] = stmt_block;
     }
     // insert the expr blocks
     for (i, expr_block) in expr_blocks.into_iter().enumerate() {
-        json["targets"][0]["blocks"][block_idx_to_id(i)] = expr_block;
+        json["targets"][0]["blocks"][expr_idx_to_id(i)] = expr_block;
     }
 
     // return completed scratch json
