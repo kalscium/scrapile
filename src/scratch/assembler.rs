@@ -1,4 +1,4 @@
-use json::{array, object, JsonValue};
+use json::{array, object, JsonValue::{self, Null}};
 use crate::scratch::block_idx_to_id;
 use super::{parse_stmt, Statement};
 
@@ -83,6 +83,10 @@ pub fn assemble(stmts: &[Statement], variables: &[String], lists: &[String]) -> 
         
         // update the link to the next block
         stmt_block["next"] = block_idx_to_id(idx+1).into();
+        // set other boilerplate fields
+        stmt_block["shadow"] = false.into();
+        stmt_block["topLevel"] = false.into();
+        stmt_block["parent"] = Null;
 
         // write stmt block to the main json
         json["targets"][0]["blocks"][block_idx_to_id(idx)] = stmt_block;

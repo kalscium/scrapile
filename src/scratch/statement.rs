@@ -50,8 +50,6 @@ pub(super) fn parse_stmt(stmt: &Statement, expr_blocks: &mut Vec<JsonValue>) -> 
         S::PushList { ident, value } => {
             object! {
                 opcode: "data_addtolist",
-                next: null, // gets replaced later
-                parent: null,
                 inputs: {
                     ITEM: [
                         1,
@@ -64,8 +62,6 @@ pub(super) fn parse_stmt(stmt: &Statement, expr_blocks: &mut Vec<JsonValue>) -> 
                         ""
                     ],
                 },
-                shadow: false,
-                topLevel: false,
             }
         },
         _ => todo!(),
