@@ -1,4 +1,4 @@
-use scrapile::scratch::{set_console, Expr, Statement};
+use scrapile::scratch::{add_console, Expr, Statement};
 
 fn main() {
     let json = scrapile::scratch::assemble(
@@ -9,8 +9,8 @@ fn main() {
             Statement::PushList { ident: "console".to_string(), value: Expr::Variable { ident: "myvar".to_string() } },
         ],
         &["myvar".to_string()],
-        &["console".to_string()],
+        &[],
     );
-    let json = set_console("console", json);
+    let json = add_console("console", json);
     scrapile::scratch::write_to_zip("test.sb3", json).unwrap();
 }
