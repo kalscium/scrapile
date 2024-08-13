@@ -128,7 +128,7 @@ pub fn assemble(stmts: &[Statement], variables: &[String], lists: &[String]) -> 
                 textToSpeechLanguage: null,
             },
         ],
-        monitors: [], // replaced later
+        monitors: [],
         extensions: [],
         meta: {
             semver: "3.0.0",
@@ -197,6 +197,26 @@ pub fn write_to_zip(path: impl AsRef<Path>, json: JsonValue) -> Result<(), std::
     // finish
     zip.finish()?;
     Ok(())
+}
+
+/// Takes the json output of `assemble` and makes a list visible for the `console`
+pub fn set_console(list_ident: &str, mut json: JsonValue) -> JsonValue {
+    json["monitors"].push(object! {
+        id: list_ident,
+        mode: "list",
+        opcode: "data_listcontents",
+        params: {
+            List: list_ident,
+        },
+        spriteName: null,
+        value: [],
+        width: 480,
+        heigh: 360,
+        x: 0,
+        y: 0,
+        visible: true,
+    }).unwrap();
+    json
 }
 
 /// Parses a scratch statement and outupts the generated json
