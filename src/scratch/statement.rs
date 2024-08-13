@@ -15,7 +15,6 @@ pub enum Statement {
         ident: String,
         value: Expr,
     },
-    GetVar { ident: String },
     ShowVar { ident: String },
     HideVar { ident: String },
 
@@ -50,6 +49,8 @@ pub(super) fn parse_stmt(stmt: &Statement, expr_blocks: &mut Vec<JsonValue>) -> 
         S::PushList { ident, value } => {
             object! {
                 opcode: "data_addtolist",
+                next: null, // gets replaced later
+                parent: null,
                 inputs: {
                     ITEM: [
                         1,
@@ -58,6 +59,25 @@ pub(super) fn parse_stmt(stmt: &Statement, expr_blocks: &mut Vec<JsonValue>) -> 
                 },
                 fields: {
                     LIST: [
+                        **ident,
+                        ""
+                    ],
+                },
+                shadow: false,
+                topLevel: false,
+            }
+        },
+        S::SetVar { ident, value } => {
+            object! {
+                opcode: "data_setvariableto",
+                inputs: {
+                    VALUE: [
+                        1,
+                        parse_expr(value.clone(), expr_blocks),
+                    ],
+                },
+                fields: {
+                    VARIABLE: [
                         **ident,
                         ""
                     ],

@@ -42,7 +42,7 @@ pub(super) fn parse_expr(expr: Expr, expr_blocks: &mut Vec<JsonValue>) -> JsonVa
         E::String(num) => array![ 10, num ],
 
         // variables and lists
-        E::Variable { ident } => array![ 12, ident ],
+        E::Variable { ident } => array![ 12, ident, "" ],
         E::ListElement { ident, idx } => {
             let json = object! {
                 opcode: "data_itemoflist",
