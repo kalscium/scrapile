@@ -4,20 +4,17 @@ pub mod expr;
 pub mod cond;
 pub mod statement;
 pub mod assembler;
+pub mod procedure;
 
 pub use expr::*;
 pub use cond::*;
 pub use statement::*;
 pub use assembler::*;
+pub use procedure::*;
 
 use std::{fs::File, io::Write, path::Path};
 use json::{array, object, JsonValue};
 use zip::{write::SimpleFileOptions, ZipWriter};
-
-#[inline]
-fn block_idx_to_id(idx: usize) -> String {
-    format!("block_idx: {idx}")
-}
 
 /// Takes the json output of `assemble` and writes it to a zip file of the path specified
 pub fn write_to_zip(path: impl AsRef<Path>, json: JsonValue) -> Result<(), std::io::Error> {

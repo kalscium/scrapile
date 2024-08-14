@@ -1,8 +1,8 @@
 use json::{array, object, JsonValue::{self, Null}};
-use super::{parse_stmt, Statement};
+use super::{parse_procedure, parse_stmt, Procedure, Statement};
 
 #[inline]
-fn expr_idx_to_id(idx: usize) -> String {
+pub(super) fn expr_idx_to_id(idx: usize) -> String {
     format!("expr_idx: {idx}")
 }
 
@@ -14,12 +14,16 @@ fn stmt_idx_to_id(idx: usize) -> String {
 /// The scratch equivelent of an 'assembler'; it takes in instructions that are very close to the scratch equivelant and generates the final `.sb3` project
 ///
 /// it also requires a list of all the variable and list ids used in the statements
-pub fn assemble(stmts: &[Statement], variables: &[String], lists: &[String]) -> JsonValue {
+pub fn assemble(stmts: &[Statement], variables: &[String], lists: &[String], procedures: &[Procedure]) -> JsonValue {
     // parse statements
     let mut expr_blocks = Vec::new();
     let stmt_blocks = stmts.iter()
         .map(|stmt| parse_stmt(stmt, &mut expr_blocks))
         .collect::<Vec<_>>();
+    // parse procedures
+    for procedure in procedures {
+        parse_procedure(procedure, &mut expr_blocks);
+    }
 
     // generate the full json template
     let mut json = object! {

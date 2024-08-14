@@ -1,4 +1,6 @@
 use json::{object, JsonValue};
+use crate::scratch::call_procedure;
+
 use super::{parse_expr, Expr};
 
 /// A statement in scratch (doesn't return anything)
@@ -10,6 +12,10 @@ pub enum Statement {
     //     /// else
     //     otherwise: Option<Vec<Statement>>,
     // },
+
+    CallProcedure {
+        ident: String,
+    },
     
     SetVar {
         ident: String,
@@ -26,7 +32,6 @@ pub enum Statement {
         ident: String,
         idx: Expr,
     },
-    ClearList(String),
     InsertList {
         ident: String,
         value: Expr,
@@ -46,6 +51,7 @@ pub(super) fn parse_stmt(stmt: &Statement, expr_blocks: &mut Vec<JsonValue>) -> 
     use Statement as S;
 
     match stmt {
+        S::CallProcedure { ident } => call_procedure(ident),
         S::PushList { ident, value } => {
             object! {
                 opcode: "data_addtolist",

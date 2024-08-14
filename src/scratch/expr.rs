@@ -1,11 +1,10 @@
 use json::{array, object, JsonValue};
+use crate::scratch::expr_idx_to_id;
 
-use crate::scratch::block_idx_to_id;
 use super::Condition;
 
 /// An expression in scratch (returns a value)
-#[derive(Debug, Clone)]
-pub enum Expr {
+#[derive(Debug, Clone)] pub enum Expr {
     // Atoms
     Number(f32),
     PosNumber(f32),
@@ -65,7 +64,7 @@ pub(super) fn parse_expr(expr: Expr, expr_blocks: &mut Vec<JsonValue>) -> JsonVa
             };
             expr_blocks.push(json);
 
-            block_idx_to_id(expr_blocks.len()-1).into()
+            expr_idx_to_id(expr_blocks.len()-1).into()
         },
         E::ListLength { ident } => {
             let json = object! {
@@ -82,7 +81,7 @@ pub(super) fn parse_expr(expr: Expr, expr_blocks: &mut Vec<JsonValue>) -> JsonVa
             };
             expr_blocks.push(json);
 
-            block_idx_to_id(expr_blocks.len()-1).into()
+            expr_idx_to_id(expr_blocks.len()-1).into()
         }
 
         _ => todo!(),
