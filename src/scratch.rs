@@ -1,4 +1,6 @@
 //! The actual scratch backend that generates the final `.sb3`
+//!
+//! (really badly, though quickly written backend code that *just works* (will probably replace with a better version later))
 
 pub mod expr;
 pub mod cond;
