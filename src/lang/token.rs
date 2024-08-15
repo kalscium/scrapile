@@ -29,8 +29,12 @@ pub enum Token {
     Dot,
     #[token("&&")]
     And,
+    #[token("||")]
+    Or,
     #[token(":")]
     Colon,
+    #[token("!")]
+    Not,
 
     // Comparisions
     #[token(">")]

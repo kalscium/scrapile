@@ -1,5 +1,5 @@
 use logos::Logos;
-use scrapile::{lang::token::Token, scratch::{add_console, Expr, Procedure, Statement}};
+use scrapile::{lang::{parser, token::Token}, scratch::{add_console, Expr, Procedure, Statement}};
 
 fn test_scratch() {
     let json = scrapile::scratch::assemble(
@@ -35,10 +35,11 @@ fn test_scratch() {
 }
 
 fn test_lang() {
-    let src = "hello there -hello_there 19there (1.2.4) \"nice\"";
-    let tokens = Token::lexer(&src).spanned().map(|(token, span)| token.map_err(|e| (e, span)).unwrap()).collect::<Vec<_>>();
+    let src = "1 + 2 * 3 == ((4 + 5)) * 6";
+    let mut tokens = Token::lexer(&src).spanned();
+    let parsed = parser::expr::parse_expr(&mut tokens, None).unwrap();
 
-    dbg!(tokens);
+    dbg!(parsed);
 }
 
 fn main() {
