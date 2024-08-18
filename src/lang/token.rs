@@ -77,6 +77,8 @@ pub enum Token {
     // Keywords & Idents
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_-]*", |lex| lex.slice().to_owned())]
     Ident(String),
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_-]*!", |lex| lex.slice()[..lex.slice().len()-1].to_owned())]
+    BuiltinFunc(String),
     #[token("let")]
     Let,
     #[token("mut")]

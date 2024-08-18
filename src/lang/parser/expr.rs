@@ -28,6 +28,11 @@ pub enum ExprOper {
     LTE,
 
     Tuple(Vec<Vec<Node<ExprOper>>>),
+
+    BuiltinFuncCall {
+        ident: Vec<String>,
+        args: Vec<Vec<Node<ExprOper>>>,
+    },
     Call {
         ident: Vec<String>,
         args: Vec<Vec<Node<ExprOper>>>,
@@ -61,6 +66,29 @@ fn parse_tuple(tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<E
     }, tokens.next())))
 }
 
+fn parse_builtin_func_call(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<ExprOper>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Token, Error>>> {
+    let ((ident, start_span), next_tok) = super::ident::parse_ident(ident, tokens)?;
+
+    // check for args for the builtin func call
+    if let Some((Token::LParen, _)) = &next_tok {
+        let (args, span) = super::tuple::parse_tuple(tokens)?;
+        return Ok(Some((OperInfo {
+            oper: ExprOper::BuiltinFuncCall { ident, args },
+            span: start_span.start..span.end,
+            space: Space::None,
+            precedence: 0,
+        }, tokens.next())));
+    }
+
+    // otherwise return a builtin function call without args
+    return Ok(Some((OperInfo {
+        oper: ExprOper::BuiltinFuncCall { ident, args: Vec::new() },
+        span: start_span,
+        space: Space::None,
+        precedence: 0,
+    }, next_tok.map(|(tok, span)| (Ok(tok), span)))));
+}
+
 fn oper_generator(token: Token, tokens: &mut SpannedIter<'_, Token>, double_space: bool) -> Result<Option<(OperInfo<ExprOper>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Token, Error>>> {
     use Token as T;
     use ExprOper as E;
@@ -73,6 +101,7 @@ fn oper_generator(token: Token, tokens: &mut SpannedIter<'_, Token>, double_spac
 
         // identifiers
         (T::Ident(ident), _) => return parse_call_or_ident(ident, tokens),
+        (T::BuiltinFunc(ident), _) => return parse_builtin_func_call(ident, tokens),
 
         // single space
         (T::Plus, false) => (1, Space::Single, E::Pos),
