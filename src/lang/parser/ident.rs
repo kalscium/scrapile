@@ -3,7 +3,7 @@ use logos::SpannedIter;
 use crate::lang::{error::Error, token::Token};
 use super::{expr::ExprOper, tuple::parse_tuple};
 
-pub fn parse_call_or_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<((ExprOper, Span), Option<(Token, Span)>), Vec<KError<Token, Error>>> {
+pub fn parse_call_or_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<((ExprOper, Span), Option<(Result<Token, Error>, Span)>), Vec<KError<Token, Error>>> {
     let ((ident, start_span), next_tok) = parse_ident(ident, tokens)?;
 
     // check for function call
@@ -14,10 +14,10 @@ pub fn parse_call_or_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -
             return Ok(((ExprOper::Call {
                 ident,
                 args,
-            }, start_span.start..span.end), None));
+            }, start_span.start..span.end), tokens.next()));
         } else {
             // if the token found is not of a function call (`LParen`)
-            return Ok(((ExprOper::Ident(ident), start_span), Some((token, span))));
+            return Ok(((ExprOper::Ident(ident), start_span), Some((Ok(token), span))));
         }
     }
 

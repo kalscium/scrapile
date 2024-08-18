@@ -52,7 +52,7 @@ fn parse_call_or_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Re
         span,
         space: Space::None,
         precedence: 0,
-    }, next_tok.map(|(tok, span)| (Ok(tok), span)))))
+    }, next_tok)))
 }
 
 fn parse_tuple(tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<ExprOper>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Token, Error>>> {

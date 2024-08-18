@@ -36,7 +36,7 @@ fn test_scratch() {
 }
 
 fn test_lang() {
-    let src = "println!(1 + 2) * num1 == ((4 + num2.val)) * 6 / (1, 2, \"hi\",) && maths.powf(1.2, 2.6) || version!";
+    let src = "println!(1 + 2 * num1 == ((4 + num2.val)) * 6 / (1, 2, \"hi\",) && maths.powf(1.2, 2.6) || version!)";
 
     let mut tokens = Token::lexer(&src).spanned();
     let first_tok = tokens.next();
