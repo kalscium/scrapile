@@ -28,6 +28,10 @@ pub enum ExprOper {
     LTE,
 
     Tuple(Vec<Vec<Node<ExprOper>>>),
+    Call {
+        ident: Vec<String>,
+        args: Vec<Vec<Node<ExprOper>>>,
+    },
 }
 
 #[inline]
@@ -35,11 +39,11 @@ pub fn parse_expr(first_tok: Option<(Result<Token, Error>, Span)>, tokens: &mut 
     Parser::<'_, Token, ExprOper, _, Vec<Node<ExprOper>>, _, Error>::new(tokens, oper_generator).parse(first_tok)
 }
 
-fn parse_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<ExprOper>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Token, Error>>> {
-    let ((ident, span), next_tok) = super::ident::parse_ident(ident, tokens)?;
+fn parse_call_or_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<ExprOper>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Token, Error>>> {
+    let ((oper, span), next_tok) = super::ident::parse_call_or_ident(ident, tokens)?;
 
     Ok(Some((OperInfo {
-        oper: ExprOper::Ident(ident),
+        oper,
         span,
         space: Space::None,
         precedence: 0,
@@ -68,7 +72,7 @@ fn oper_generator(token: Token, tokens: &mut SpannedIter<'_, Token>, double_spac
         (T::String(str), _) => (0, Space::None, E::String(str)),
 
         // identifiers
-        (T::Ident(ident), _) => return parse_ident(ident, tokens),
+        (T::Ident(ident), _) => return parse_call_or_ident(ident, tokens),
 
         // single space
         (T::Plus, false) => (1, Space::Single, E::Pos),
