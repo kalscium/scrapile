@@ -37,6 +37,8 @@ pub enum Token {
     Not,
     #[token(",")]
     Comma,
+    #[token("<>")]
+    Concat,
 
     // Comparisions
     #[token(">")]

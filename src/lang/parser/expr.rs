@@ -13,6 +13,7 @@ pub enum ExprOper {
     Sub,
     Mul,
     Div,
+    Concat,
 
     Neg,
     Pos,
@@ -116,19 +117,22 @@ fn oper_generator(token: Token, tokens: &mut SpannedIter<'_, Token>, double_spac
         (T::Plus, true) => (3, Space::Double, E::Add),
         (T::Minus, true) => (3, Space::Double, E::Sub),
 
+        // concatination
+        (T::Concat, _) => (4, Space::Double, E::Concat),
+
         // comparisions
-        (T::EE, _) => (4, Space::Double, E::EE),
-        (T::NE, _) => (4, Space::Double, E::NE),
-        (T::GT, _) => (4, Space::Double, E::GT),
-        (T::LT, _) => (4, Space::Double, E::LT),
-        (T::GTE, _) => (4, Space::Double, E::GTE),
-        (T::LTE, _) => (4, Space::Double, E::LTE),
+        (T::EE, _) => (5, Space::Double, E::EE),
+        (T::NE, _) => (5, Space::Double, E::NE),
+        (T::GT, _) => (5, Space::Double, E::GT),
+        (T::LT, _) => (5, Space::Double, E::LT),
+        (T::GTE, _) => (5, Space::Double, E::GTE),
+        (T::LTE, _) => (5, Space::Double, E::LTE),
 
         // and, or
-        (T::And, _) => (5, Space::Double, E::And),
-        (T::Or, _) => (5, Space::Double, E::Or),
+        (T::And, _) => (6, Space::Double, E::And),
+        (T::Or, _) => (6, Space::Double, E::Or),
 
-        // parentheses
+        // tuples
         (T::LParen, _) => return parse_tuple(tokens),
 
         // tokens this oper generator doesn't recognise
