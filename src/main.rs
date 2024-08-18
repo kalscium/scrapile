@@ -36,7 +36,7 @@ fn test_scratch() {
 }
 
 fn test_lang() {
-    let src = "1 + 2 * 3 == ((4 + 5)) * 6";
+    let src = "1 + 2 * num1 == ((4 + num2.val)) * 6";
     let mut tokens = Token::lexer(&src).spanned();
     let (parsed, trailing_tok) = parser::expr::parse_expr(&mut tokens).unwrap();
 

@@ -7,6 +7,7 @@ pub enum Expr {
     Integer(u32),
     Float(f64),
     String(String),
+    Ident(Vec<String>),
 
     Add,
     Sub,
@@ -32,6 +33,17 @@ pub enum Expr {
 #[inline]
 pub fn parse_expr(tokens: &mut SpannedIter<'_, Token>) -> Result<(Vec<Node<Expr>>, Option<(Token, Span)>), Vec<KError<Token, Error>>> {
     Parser::<'_, Token, Expr, _, Vec<Node<Expr>>, _, Error>::new(tokens, oper_generator).parse()
+}
+
+fn parse_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<Expr>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Token, Error>>> {
+    let ((ident, span), next_tok) = super::ident::parse_ident(ident, tokens)?;
+
+    Ok(Some((OperInfo {
+        oper: Expr::Ident(ident),
+        span,
+        space: Space::None,
+        precedence: 0,
+    }, next_tok.map(|(tok, span)| (Ok(tok), span)))))
 }
 
 fn parse_paren(tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<Expr>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Token, Error>>> {
@@ -61,6 +73,9 @@ fn oper_generator(token: Token, tokens: &mut SpannedIter<'_, Token>, double_spac
         (T::Integer(int), _) => (0, Space::None, E::Integer(int)),
         (T::Float(f), _) => (0, Space::None, E::Float(f)),
         (T::String(str), _) => (0, Space::None, E::String(str)),
+
+        // identifiers
+        (T::Ident(ident), _) => return parse_ident(ident, tokens),
 
         // single space
         (T::Plus, false) => (1, Space::Single, E::Pos),

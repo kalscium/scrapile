@@ -4,4 +4,5 @@ pub enum Error {
     UnexpectedCharacter,
     UnclosedParentheses,
     UnexpectedToken,
+    ExpectedIdent,
 }
