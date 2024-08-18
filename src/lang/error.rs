@@ -2,4 +2,6 @@
 pub enum Error {
     #[default]
     UnexpectedCharacter,
+    UnclosedParentheses,
+    UnexpectedToken,
 }

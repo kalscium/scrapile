@@ -1,5 +1,6 @@
+use ketchup::error::KError;
 use logos::Logos;
-use scrapile::{lang::{parser, token::Token}, scratch::{add_console, Expr, Procedure, Statement}};
+use scrapile::{lang::{error::Error, parser, token::Token}, scratch::{add_console, Expr, Procedure, Statement}};
 
 fn test_scratch() {
     let json = scrapile::scratch::assemble(
@@ -37,9 +38,14 @@ fn test_scratch() {
 fn test_lang() {
     let src = "1 + 2 * 3 == ((4 + 5)) * 6";
     let mut tokens = Token::lexer(&src).spanned();
-    let parsed = parser::expr::parse_expr(&mut tokens, None).unwrap();
+    let (parsed, trailing_tok) = parser::expr::parse_expr(&mut tokens).unwrap();
 
-    dbg!(parsed);
+    // make sure that there aren't any tokens that haven't been consumed
+    if let Some((_, span)) = trailing_tok {
+        panic!("{:?}", KError::<Token, _>::Other(span, Error::UnexpectedToken));
+    }
+
+    println!("{parsed:?}");
 }
 
 fn main() {

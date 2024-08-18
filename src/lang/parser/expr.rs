@@ -1,4 +1,4 @@
-use ketchup::{error::KError, node::Node, parser::Parser, OperInfo, Space};
+use ketchup::{error::KError, node::Node, parser::Parser, OperInfo, Space, Span};
 use logos::SpannedIter;
 use crate::lang::{error::Error, token::Token};
 
@@ -30,23 +30,29 @@ pub enum Expr {
 }
 
 #[inline]
-pub fn parse_expr(tokens: &mut SpannedIter<'_, Token>, eof_token: Option<Token>) -> Result<Vec<Node<Expr>>, Vec<KError<Token, Error>>> {
-    Parser::<'_, Token, Expr, _, Vec<Node<Expr>>, _, Error>::new(tokens, eof_token, oper_generator).parse()
+pub fn parse_expr(tokens: &mut SpannedIter<'_, Token>) -> Result<(Vec<Node<Expr>>, Option<(Token, Span)>), Vec<KError<Token, Error>>> {
+    Parser::<'_, Token, Expr, _, Vec<Node<Expr>>, _, Error>::new(tokens, oper_generator).parse()
 }
 
-fn parse_paren(tokens: &mut SpannedIter<'_, Token>) -> Result<OperInfo<Expr>, Vec<KError<Token, Error>>> {
+fn parse_paren(tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<Expr>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Token, Error>>> {
     let start_span = tokens.span();
-    let asa = parse_expr(tokens, Some(Token::RParen))?;
+    let (asa, next_tok) = parse_expr(tokens)?;
 
-    Ok(OperInfo {
+    // ensure the closing parentheses is found
+    match next_tok {
+        Some((Token::RParen, _)) => (), // okay
+        _ => return Err(vec![KError::Other(tokens.span(), Error::UnclosedParentheses)]),
+    }
+
+    Ok(Some((OperInfo {
         oper: Expr::Scope(asa),
         span: start_span.start..tokens.span().end,
         space: Space::None,
         precedence: 0,
-    })
+    }, tokens.next())))
 }
 
-fn oper_generator(token: Token, tokens: &mut SpannedIter<'_, Token>, double_space: bool) -> Result<OperInfo<Expr>, Vec<KError<Token, Error>>> {
+fn oper_generator(token: Token, tokens: &mut SpannedIter<'_, Token>, double_space: bool) -> Result<Option<(OperInfo<Expr>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Token, Error>>> {
     use Token as T;
     use Expr as E;
 
@@ -82,16 +88,16 @@ fn oper_generator(token: Token, tokens: &mut SpannedIter<'_, Token>, double_spac
         (T::Or, _) => (5, Space::Double, E::Or),
 
         // parentheses
-        (T::RParen, _) => return Err(vec![KError::UnexpectedOper(tokens.span())]),
         (T::LParen, _) => return parse_paren(tokens),
 
-        _ => todo!(),
+        // tokens this oper generator doesn't recognise
+        _ => return Ok(None),
     };
     
-    Ok(OperInfo {
+    Ok(Some((OperInfo {
         oper,
         span: tokens.span(),
         space,
         precedence,
-    })
+    }, tokens.next())))
 }
