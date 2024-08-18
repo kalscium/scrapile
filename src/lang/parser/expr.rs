@@ -3,7 +3,7 @@ use logos::SpannedIter;
 use crate::lang::{error::Error, token::Token};
 
 #[derive(Debug, Clone)]
-pub enum Expr {
+pub enum ExprOper {
     Integer(u32),
     Float(f64),
     String(String),
@@ -27,46 +27,39 @@ pub enum Expr {
     GTE,
     LTE,
 
-    Scope(Vec<Node<Expr>>),
+    Tuple(Vec<Vec<Node<ExprOper>>>),
 }
 
 #[inline]
-pub fn parse_expr(tokens: &mut SpannedIter<'_, Token>) -> Result<(Vec<Node<Expr>>, Option<(Token, Span)>), Vec<KError<Token, Error>>> {
-    Parser::<'_, Token, Expr, _, Vec<Node<Expr>>, _, Error>::new(tokens, oper_generator).parse()
+pub fn parse_expr(first_tok: Option<(Result<Token, Error>, Span)>, tokens: &mut SpannedIter<'_, Token>) -> Result<(Vec<Node<ExprOper>>, Option<(Token, Span)>), Vec<KError<Token, Error>>> {
+    Parser::<'_, Token, ExprOper, _, Vec<Node<ExprOper>>, _, Error>::new(tokens, oper_generator).parse(first_tok)
 }
 
-fn parse_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<Expr>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Token, Error>>> {
+fn parse_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<ExprOper>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Token, Error>>> {
     let ((ident, span), next_tok) = super::ident::parse_ident(ident, tokens)?;
 
     Ok(Some((OperInfo {
-        oper: Expr::Ident(ident),
+        oper: ExprOper::Ident(ident),
         span,
         space: Space::None,
         precedence: 0,
     }, next_tok.map(|(tok, span)| (Ok(tok), span)))))
 }
 
-fn parse_paren(tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<Expr>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Token, Error>>> {
-    let start_span = tokens.span();
-    let (asa, next_tok) = parse_expr(tokens)?;
-
-    // ensure the closing parentheses is found
-    match next_tok {
-        Some((Token::RParen, _)) => (), // okay
-        _ => return Err(vec![KError::Other(tokens.span(), Error::UnclosedParentheses)]),
-    }
+fn parse_tuple(tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<ExprOper>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Token, Error>>> {
+    let (tuple, span) = super::tuple::parse_tuple(tokens)?;
 
     Ok(Some((OperInfo {
-        oper: Expr::Scope(asa),
-        span: start_span.start..tokens.span().end,
+        oper: ExprOper::Tuple(tuple),
+        span,
         space: Space::None,
         precedence: 0,
     }, tokens.next())))
 }
 
-fn oper_generator(token: Token, tokens: &mut SpannedIter<'_, Token>, double_space: bool) -> Result<Option<(OperInfo<Expr>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Token, Error>>> {
+fn oper_generator(token: Token, tokens: &mut SpannedIter<'_, Token>, double_space: bool) -> Result<Option<(OperInfo<ExprOper>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Token, Error>>> {
     use Token as T;
-    use Expr as E;
+    use ExprOper as E;
 
     let (precedence, space, oper) = match (token, double_space) {
         // literals
@@ -103,7 +96,7 @@ fn oper_generator(token: Token, tokens: &mut SpannedIter<'_, Token>, double_spac
         (T::Or, _) => (5, Space::Double, E::Or),
 
         // parentheses
-        (T::LParen, _) => return parse_paren(tokens),
+        (T::LParen, _) => return parse_tuple(tokens),
 
         // tokens this oper generator doesn't recognise
         _ => return Ok(None),

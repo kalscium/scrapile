@@ -35,6 +35,8 @@ pub enum Token {
     Colon,
     #[token("!")]
     Not,
+    #[token(",")]
+    Comma,
 
     // Comparisions
     #[token(">")]

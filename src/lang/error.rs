@@ -5,4 +5,5 @@ pub enum Error {
     UnclosedParentheses,
     UnexpectedToken,
     ExpectedIdent,
+    ExpectedCommaOrRParen,
 }

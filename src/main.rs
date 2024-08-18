@@ -36,9 +36,11 @@ fn test_scratch() {
 }
 
 fn test_lang() {
-    let src = "1 + 2 * num1 == ((4 + num2.val)) * 6";
+    let src = "1 + 2 * num1 == ((4 + num2.val)) * 6 / (1, 2, \"hi\",)";
+
     let mut tokens = Token::lexer(&src).spanned();
-    let (parsed, trailing_tok) = parser::expr::parse_expr(&mut tokens).unwrap();
+    let first_tok = tokens.next();
+    let (parsed, trailing_tok) = parser::expr::parse_expr(first_tok, &mut tokens).unwrap();
 
     // make sure that there aren't any tokens that haven't been consumed
     if let Some((_, span)) = trailing_tok {
