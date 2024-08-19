@@ -1,7 +1,14 @@
-use ketchup::{error::KError, Span};
+use ketchup::{error::KError, node::Node, Span};
 use logos::SpannedIter;
 use crate::lang::{error::Error, token::Token};
 use super::{expr::ExprOper, tuple::parse_tuple};
+
+#[derive(Debug, Clone)]
+pub struct Call {
+    pub ident: Vec<String>,
+    pub args: Vec<Vec<Node<ExprOper>>>,
+    pub is_builtin: bool,
+}
 
 pub fn parse_call_or_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<((ExprOper, Span), Option<(Result<Token, Error>, Span)>), Vec<KError<Token, Error>>> {
     let ((ident, start_span), next_tok) = parse_ident(ident, tokens)?;
@@ -11,10 +18,11 @@ pub fn parse_call_or_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -
         if token == Token::LParen {
             // if there is a function call then parse the arguments of it
             let (args, span) = parse_tuple(tokens)?;
-            return Ok(((ExprOper::Call {
+            return Ok(((ExprOper::Call( Call {
                 ident,
                 args,
-            }, start_span.start..span.end), tokens.next()));
+                is_builtin: false,
+            }), start_span.start..span.end), tokens.next()));
         } else {
             // if the token found is not of a function call (`LParen`)
             return Ok(((ExprOper::Ident(ident), start_span), Some((Ok(token), span))));
@@ -23,6 +31,26 @@ pub fn parse_call_or_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -
 
     // if there are no tokens following the identifier
     Ok(((ExprOper::Ident(ident), start_span), None))
+}
+
+pub fn parse_call(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<(Call, Span), Vec<KError<Token, Error>>> {
+    let ((ident, start_span), next_tok) = parse_ident(ident, tokens)?;
+
+    // check for function call
+    if let Some((token, _)) = next_tok {
+        if token == Token::LParen {
+            // if there is a function call then parse the arguments of it
+            let (args, span) = parse_tuple(tokens)?;
+            return Ok((Call {
+                ident,
+                args,
+                is_builtin: false,
+            }, start_span.start..span.end));
+        }
+    }
+
+    // if there are no tokens following the identifier or there isn't a LParen following the ident
+    Err(vec![KError::Other(tokens.span(), Error::ExpectedCallLParen)])
 }
 
 pub fn parse_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<((Vec<String>, Span), Option<(Token, Span)>), Vec<KError<Token, Error>>> {

@@ -6,4 +6,6 @@ pub enum Error {
     UnexpectedToken,
     ExpectedIdent,
     ExpectedCommaOrRParen,
+    ExpectedStmt,
+    ExpectedCallLParen,
 }

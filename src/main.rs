@@ -40,7 +40,7 @@ fn test_lang() {
 
     let mut tokens = Token::lexer(&src).spanned();
     let first_tok = tokens.next();
-    let (parsed, trailing_tok) = parser::expr::parse_expr(first_tok, &mut tokens).unwrap();
+    let ((parsed, _), trailing_tok) = parser::stmt::parse_stmt(first_tok, &mut tokens).unwrap();
 
     // make sure that there aren't any tokens that haven't been consumed
     if let Some((_, span)) = trailing_tok {

@@ -1,6 +1,7 @@
 use ketchup::{error::KError, node::Node, parser::Parser, OperInfo, Space, Span};
 use logos::SpannedIter;
 use crate::lang::{error::Error, token::Token};
+use super::ident::Call;
 
 #[derive(Debug, Clone)]
 pub enum ExprOper {
@@ -30,19 +31,16 @@ pub enum ExprOper {
 
     Tuple(Vec<Vec<Node<ExprOper>>>),
 
-    BuiltinFuncCall {
-        ident: Vec<String>,
-        args: Vec<Vec<Node<ExprOper>>>,
-    },
-    Call {
-        ident: Vec<String>,
-        args: Vec<Vec<Node<ExprOper>>>,
-    },
+    Call(Call),
 }
 
 #[inline]
-pub fn parse_expr(first_tok: Option<(Result<Token, Error>, Span)>, tokens: &mut SpannedIter<'_, Token>) -> Result<(Vec<Node<ExprOper>>, Option<(Token, Span)>), Vec<KError<Token, Error>>> {
-    Parser::<'_, Token, ExprOper, _, Vec<Node<ExprOper>>, _, Error>::new(tokens, oper_generator).parse(first_tok)
+pub fn parse_expr(first_tok: Option<(Result<Token, Error>, Span)>, tokens: &mut SpannedIter<'_, Token>) -> Result<((Vec<Node<ExprOper>>, Span), Option<(Token, Span)>), Vec<KError<Token, Error>>> {
+    let (parsed, next_tok) = Parser::<'_, Token, ExprOper, _, Vec<Node<ExprOper>>, _, Error>::new(tokens, oper_generator).parse(first_tok)?;
+    let span_start = parsed.first().map(|node| node.info.span.start).unwrap_or(0);
+    let span_end = parsed.last().map(|node| node.info.span.end).unwrap_or(0);
+
+    Ok(((parsed, span_start..span_end), next_tok))
 }
 
 fn parse_call_or_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<ExprOper>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Token, Error>>> {
@@ -74,7 +72,7 @@ fn parse_builtin_func_call(ident: String, tokens: &mut SpannedIter<'_, Token>) -
     if let Some((Token::LParen, _)) = &next_tok {
         let (args, span) = super::tuple::parse_tuple(tokens)?;
         return Ok(Some((OperInfo {
-            oper: ExprOper::BuiltinFuncCall { ident, args },
+            oper: ExprOper::Call(Call { ident, args, is_builtin: true }),
             span: start_span.start..span.end,
             space: Space::None,
             precedence: 0,
@@ -83,7 +81,7 @@ fn parse_builtin_func_call(ident: String, tokens: &mut SpannedIter<'_, Token>) -
 
     // otherwise return a builtin function call without args
     return Ok(Some((OperInfo {
-        oper: ExprOper::BuiltinFuncCall { ident, args: Vec::new() },
+        oper: ExprOper::Call(Call { ident, args: Vec::new(), is_builtin: true }),
         span: start_span,
         space: Space::None,
         precedence: 0,
