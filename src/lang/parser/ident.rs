@@ -1,12 +1,12 @@
-use ketchup::{error::KError, node::Node, Span};
+use ketchup::{error::KError, Span};
 use logos::SpannedIter;
 use crate::lang::{error::Error, token::Token};
-use super::{expr::ExprOper, tuple::parse_tuple};
+use super::{expr::{Expr, ExprOper}, tuple::parse_tuple};
 
 #[derive(Debug, Clone)]
 pub struct Call {
     pub ident: Vec<String>,
-    pub args: Vec<Vec<Node<ExprOper>>>,
+    pub args: Vec<Expr>,
     pub is_builtin: bool,
 }
 

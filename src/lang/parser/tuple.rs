@@ -1,10 +1,10 @@
-use ketchup::{error::KError, node::Node, Span};
+use ketchup::{error::KError, Span};
 use logos::SpannedIter;
 use crate::lang::{error::Error, token::Token};
-use super::expr::{parse_expr, ExprOper};
+use super::expr::{parse_expr, Expr};
 
 /// Parses a tuple (given that the `LParen` token has already been consumed)
-pub fn parse_tuple(tokens: &mut SpannedIter<'_, Token>) -> Result<(Vec<Vec<Node<ExprOper>>>, Span), Vec<KError<Token, Error>>> {
+pub fn parse_tuple(tokens: &mut SpannedIter<'_, Token>) -> Result<(Vec<Expr>, Span), Vec<KError<Token, Error>>> {
     let start_span = tokens.span();
     let mut exprs = Vec::new();
 
@@ -23,14 +23,14 @@ pub fn parse_tuple(tokens: &mut SpannedIter<'_, Token>) -> Result<(Vec<Vec<Node<
     };
 
     // parse first expr
-    let ((expr, _), mut next_tok) = parse_expr(first_tok, tokens)?;
+    let (expr, mut next_tok) = parse_expr(first_tok, tokens)?;
     exprs.push(expr);
 
     while let Some((token, span)) = next_tok {
         match token {
             Token::RParen => return Ok((exprs, start_span.start..span.end)), // when the tuple is terminated
             Token::Comma => {
-                let ((expr, _), local_next_tok) = parse_expr(tokens.next(), tokens)?; // parse next expr
+                let (expr, local_next_tok) = parse_expr(tokens.next(), tokens)?; // parse next expr
                 next_tok = local_next_tok; // update `next_tok` to be the token after the expr
                 exprs.push(expr); // add the expr to the list of exprs
 

@@ -1,11 +1,11 @@
-use ketchup::{error::KError, node::Node, Span};
+use ketchup::{error::KError, Span};
 use logos::SpannedIter;
 use crate::lang::{error::Error, token::Token};
-use super::expr::{parse_expr, ExprOper};
+use super::expr::{parse_expr, Expr};
 
 #[derive(Debug, Clone)]
 pub enum Stmt {
-    Expr(Vec<Node<ExprOper>>),
+    Expr(Expr),
 }
 
 pub fn parse_stmt(first_tok: Option<(Result<Token, Error>, Span)>, tokens: &mut SpannedIter<'_, Token>) -> Result<((Stmt, Span), Option<(Result<Token, Error>, Span)>), Vec<KError<Token, Error>>> {
@@ -17,6 +17,6 @@ pub fn parse_stmt(first_tok: Option<(Result<Token, Error>, Span)>, tokens: &mut 
 
     match first_tok {
         // assume that the statement is a expr
-        _ => parse_expr(Some((Ok(first_tok), start_span.clone())), tokens).map(|((exprs, span), next_tok)| ((Stmt::Expr(exprs), start_span.start..span.end), next_tok.map(|(tok, span)| (Ok(tok), span)))),
+        _ => parse_expr(Some((Ok(first_tok), start_span.clone())), tokens).map(|(expr, next_tok)| ((Stmt::Expr(expr.clone()), start_span.start..expr.span.end), next_tok.map(|(tok, span)| (Ok(tok), span)))),
     }
 }

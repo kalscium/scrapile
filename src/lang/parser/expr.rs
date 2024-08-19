@@ -1,7 +1,13 @@
 use ketchup::{error::KError, node::Node, parser::Parser, OperInfo, Space, Span};
 use logos::SpannedIter;
 use crate::lang::{error::Error, token::Token};
-use super::ident::Call;
+use super::{ident::Call, stmt::Stmt};
+
+#[derive(Debug, Clone)]
+pub struct Expr {
+    pub span: Span,
+    pub asa: Vec<Node<ExprOper>>,
+}
 
 #[derive(Debug, Clone)]
 pub enum ExprOper {
@@ -29,18 +35,21 @@ pub enum ExprOper {
     GTE,
     LTE,
 
-    Tuple(Vec<Vec<Node<ExprOper>>>),
-
+    Tuple(Vec<Expr>),
     Call(Call),
+    Block(Vec<(Stmt, Span)>),
 }
 
 #[inline]
-pub fn parse_expr(first_tok: Option<(Result<Token, Error>, Span)>, tokens: &mut SpannedIter<'_, Token>) -> Result<((Vec<Node<ExprOper>>, Span), Option<(Token, Span)>), Vec<KError<Token, Error>>> {
-    let (parsed, next_tok) = Parser::<'_, Token, ExprOper, _, Vec<Node<ExprOper>>, _, Error>::new(tokens, oper_generator).parse(first_tok)?;
-    let span_start = parsed.first().map(|node| node.info.span.start).unwrap_or(0);
-    let span_end = parsed.last().map(|node| node.info.span.end).unwrap_or(0);
+pub fn parse_expr(first_tok: Option<(Result<Token, Error>, Span)>, tokens: &mut SpannedIter<'_, Token>) -> Result<(Expr, Option<(Token, Span)>), Vec<KError<Token, Error>>> {
+    let (asa, next_tok) = Parser::<'_, Token, ExprOper, _, Vec<Node<ExprOper>>, _, Error>::new(tokens, oper_generator).parse(first_tok)?;
+    let span_start = asa.first().map(|node| node.info.span.start).unwrap_or(0);
+    let span_end = asa.last().map(|node| node.info.span.end).unwrap_or(0);
 
-    Ok(((parsed, span_start..span_end), next_tok))
+    Ok((Expr {
+        span: span_start..span_end,
+        asa,
+    }, next_tok))
 }
 
 fn parse_call_or_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<ExprOper>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Token, Error>>> {
