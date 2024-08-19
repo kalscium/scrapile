@@ -1,4 +1,4 @@
-use ariadne::{Color, Label, Report, ReportKind, Source};
+use ariadne::{Color, Fmt, Label, Report, ReportKind, Source};
 use ketchup::{error::KError, Span};
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -23,6 +23,10 @@ pub enum Error {
     },
     ExpectedSemiOrRBrace {
         block_start_span: Span,
+    },
+
+    ExpectedBlockForMain {
+        main_start_span: Span,
     },
 }
 
@@ -52,7 +56,6 @@ impl Reportable for KError<Error> {
 
                 // errors with multiple labels
 
-                // unclosed foo errors
                 E::UnclosedParentheses { paren_start_span } => return report
                     .with_message("unclosed parentheses")
                     .with_label(
@@ -109,6 +112,22 @@ impl Reportable for KError<Error> {
                     .with_label(
                         Label::new((src_id, block_start_span.clone()))
                             .with_message("to continue or complete this block")
+                            .with_color(Color::Blue)
+                    )
+                    .finish()
+                    .eprint((src_id, Source::from(src)))
+                    .unwrap(),
+
+                E::ExpectedBlockForMain { main_start_span } => return report
+                    .with_message("expected a body for the main procedure")
+                    .with_label(
+                        Label::new((src_id, span.clone()))
+                            .with_message("expected body `{`")
+                            .with_color(Color::Red)
+                    )
+                    .with_label(
+                        Label::new((src_id, main_start_span.clone()))
+                            .with_message(format!("expected due to `{}` keyword", "main".fg(Color::Cyan)))
                             .with_color(Color::Blue)
                     )
                     .finish()

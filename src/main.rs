@@ -50,13 +50,13 @@ fn test_lang() {
             multi-line comment
         */
 
-        // a block
-        {
+        /// The main procedure of this program
+        main {
             # demonstration of an example expression
             println!(1 + 2 * num1 == ((4 + num2.val)) * 6 / (1, 2, "hi",) && maths.powf(1.2, 2.6) || version!);
             println!("hello, " <> "world!");
 
-            # a nested block
+            // a nested block
             {
                 println!({1 + 2; (3 * 4, "cool")});
             }
@@ -64,16 +64,10 @@ fn test_lang() {
     "##;
 
     let mut tokens = Token::lexer(&src).spanned();
-    let first_tok = tokens.next();
-    let ((parsed, _), trailing_tok) = match parser::stmt::parse_stmt(first_tok, &mut tokens) {
+    let parsed = match parser::root::parse_root(&mut tokens) {
         Ok(ok) => ok,
         Err(err) => throw_lang_error(src, &err),
     };
-
-    // make sure that there aren't any tokens that haven't been consumed
-    if let Some((_, span)) = trailing_tok {
-        throw_lang_error(src, &[KError::Other(span, Error::UnexpectedToken)])
-    }
 
     println!("{parsed:?}");
 }

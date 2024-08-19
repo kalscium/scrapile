@@ -8,7 +8,6 @@ use crate::lang::error::Error;
 #[logos(skip r"\/\/[^\n\r]*")] // `//` comments
 #[logos(skip r"#[^\n\r]*")] // `#` comments
 #[logos(skip r"\/\*[^\*\/]*\*\/")] // multi-line comments
-#[logos(skip r"nice")]
 pub enum Token {
     // Literals
     #[regex(r"[0-9]+", |lex| lex.slice().parse::<u32>().unwrap())]
@@ -87,6 +86,8 @@ pub enum Token {
     Ident(String),
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_-]*!", |lex| lex.slice()[..lex.slice().len()-1].to_owned())]
     BuiltinFunc(String),
+    #[token("main")]
+    Main,
     #[token("let")]
     Let,
     #[token("mut")]
