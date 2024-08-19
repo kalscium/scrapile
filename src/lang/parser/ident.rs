@@ -10,7 +10,7 @@ pub struct Call {
     pub is_builtin: bool,
 }
 
-pub fn parse_call_or_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<((ExprOper, Span), Option<(Result<Token, Error>, Span)>), Vec<KError<Token, Error>>> {
+pub fn parse_call_or_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<((ExprOper, Span), Option<(Result<Token, Error>, Span)>), Vec<KError<Error>>> {
     let ((ident, start_span), next_tok) = parse_ident(ident, tokens)?;
 
     // check for function call
@@ -33,7 +33,7 @@ pub fn parse_call_or_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -
     Ok(((ExprOper::Ident(ident), start_span), None))
 }
 
-pub fn parse_call(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<(Call, Span), Vec<KError<Token, Error>>> {
+pub fn parse_call(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<(Call, Span), Vec<KError<Error>>> {
     let ((ident, start_span), next_tok) = parse_ident(ident, tokens)?;
 
     // check for function call
@@ -53,7 +53,7 @@ pub fn parse_call(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<
     Err(vec![KError::Other(tokens.span(), Error::ExpectedCallLParen)])
 }
 
-pub fn parse_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<((Vec<String>, Span), Option<(Token, Span)>), Vec<KError<Token, Error>>> {
+pub fn parse_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<((Vec<String>, Span), Option<(Token, Span)>), Vec<KError<Error>>> {
     let start_span = tokens.span();
 
     let mut idents = vec![ident];

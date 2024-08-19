@@ -10,7 +10,7 @@ pub struct Block {
 }
 
 /// Parses a block (given that the `LBrace` token as alredy been consumed)
-pub fn parse_block(tokens: &mut SpannedIter<'_, Token>) -> Result<(Block, Span), Vec<KError<Token, Error>>> {
+pub fn parse_block(tokens: &mut SpannedIter<'_, Token>) -> Result<(Block, Span), Vec<KError<Error>>> {
     let start_span = tokens.span();
     let mut stmts = Vec::new();
 

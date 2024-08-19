@@ -8,7 +8,7 @@ pub enum Stmt {
     Expr(Expr),
 }
 
-pub fn parse_stmt(first_tok: Option<(Result<Token, Error>, Span)>, tokens: &mut SpannedIter<'_, Token>) -> Result<((Stmt, Span), Option<(Result<Token, Error>, Span)>), Vec<KError<Token, Error>>> {
+pub fn parse_stmt(first_tok: Option<(Result<Token, Error>, Span)>, tokens: &mut SpannedIter<'_, Token>) -> Result<((Stmt, Span), Option<(Result<Token, Error>, Span)>), Vec<KError<Error>>> {
     let (first_tok, start_span) = match first_tok {
         Some((Ok(tok), span)) => (tok, span),
         Some((Err(err), span)) => return Err(vec![KError::Other(span, err)]),

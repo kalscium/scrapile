@@ -4,7 +4,7 @@ use crate::lang::{error::Error, token::Token};
 use super::expr::{parse_expr, Expr};
 
 /// Parses a tuple (given that the `LParen` token has already been consumed)
-pub fn parse_tuple(tokens: &mut SpannedIter<'_, Token>) -> Result<(Vec<Expr>, Span), Vec<KError<Token, Error>>> {
+pub fn parse_tuple(tokens: &mut SpannedIter<'_, Token>) -> Result<(Vec<Expr>, Span), Vec<KError<Error>>> {
     let start_span = tokens.span();
     let mut exprs = Vec::new();
 

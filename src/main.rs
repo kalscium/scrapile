@@ -61,7 +61,7 @@ fn test_lang() {
 
     // make sure that there aren't any tokens that haven't been consumed
     if let Some((_, span)) = trailing_tok {
-        panic!("{:?}", KError::<Token, _>::Other(span, Error::UnexpectedToken));
+        panic!("{:?}", KError::Other(span, Error::UnexpectedToken));
     }
 
     println!("{parsed:?}");
