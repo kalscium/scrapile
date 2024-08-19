@@ -1,7 +1,7 @@
 use ketchup::{error::KError, node::Node, parser::Parser, OperInfo, Space, Span};
 use logos::SpannedIter;
 use crate::lang::{error::Error, token::Token};
-use super::{ident::Call, stmt::Stmt};
+use super::{block::Block, ident::Call};
 
 #[derive(Debug, Clone)]
 pub struct Expr {
@@ -10,8 +10,7 @@ pub struct Expr {
 }
 
 #[derive(Debug, Clone)]
-pub enum ExprOper {
-    Integer(u32),
+pub enum ExprOper { Integer(u32),
     Float(f64),
     String(String),
     Ident(Vec<String>),
@@ -37,14 +36,21 @@ pub enum ExprOper {
 
     Tuple(Vec<Expr>),
     Call(Call),
-    Block(Vec<(Stmt, Span)>),
+    Block(Block),
 }
 
 #[inline]
 pub fn parse_expr(first_tok: Option<(Result<Token, Error>, Span)>, tokens: &mut SpannedIter<'_, Token>) -> Result<(Expr, Option<(Token, Span)>), Vec<KError<Token, Error>>> {
+    let start_span = tokens.span();
     let (asa, next_tok) = Parser::<'_, Token, ExprOper, _, Vec<Node<ExprOper>>, _, Error>::new(tokens, oper_generator).parse(first_tok)?;
-    let span_start = asa.first().map(|node| node.info.span.start).unwrap_or(0);
-    let span_end = asa.last().map(|node| node.info.span.end).unwrap_or(0);
+
+    let span_start = asa.first().map(|node| node.info.span.start).unwrap_or(start_span.start);
+    let span_end = asa.last().map(|node| node.info.span.end).unwrap_or(start_span.end);
+
+    // ensure that the expr is not empty
+    if asa.is_empty() {
+        return Err(vec![KError::Other(span_start..span_end, Error::ExpectedExpr)]);
+    }
 
     Ok((Expr {
         span: span_start..span_end,
@@ -68,6 +74,17 @@ fn parse_tuple(tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<E
 
     Ok(Some((OperInfo {
         oper: ExprOper::Tuple(tuple),
+        span,
+        space: Space::None,
+        precedence: 0,
+    }, tokens.next())))
+}
+
+fn parse_block(tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<ExprOper>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Token, Error>>> {
+    let (block, span) = super::block::parse_block(tokens)?;
+
+    Ok(Some((OperInfo {
+        oper: ExprOper::Block(block),
         span,
         space: Space::None,
         precedence: 0,
@@ -139,8 +156,9 @@ fn oper_generator(token: Token, tokens: &mut SpannedIter<'_, Token>, double_spac
         (T::And, _) => (6, Space::Double, E::And),
         (T::Or, _) => (6, Space::Double, E::Or),
 
-        // tuples
+        // tuples & blocks
         (T::LParen, _) => return parse_tuple(tokens),
+        (T::LBrace, _) => return parse_block(tokens),
 
         // tokens this oper generator doesn't recognise
         _ => return Ok(None),

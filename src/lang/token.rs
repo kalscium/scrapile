@@ -37,6 +37,8 @@ pub enum Token {
     Or,
     #[token(":")]
     Colon,
+    #[token(";")]
+    SemiColon,
     #[token("!")]
     Not,
     #[token(",")]

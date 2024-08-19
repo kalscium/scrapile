@@ -8,4 +8,7 @@ pub enum Error {
     ExpectedCommaOrRParen,
     ExpectedStmt,
     ExpectedCallLParen,
+    UnclosedBrace,
+    ExpectedSemiOrRBrace,
+    ExpectedExpr,
 }

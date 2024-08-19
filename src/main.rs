@@ -36,16 +36,24 @@ fn test_scratch() {
 }
 
 fn test_lang() {
-    let src = "
+    let src = r##"
         /*
             Here is a demonstration of a
             multi-line comment
         */
-    
-        # demonstration of an example expression
-        (println!(1 + 2 * num1 == ((4 + num2.val)) * 6 / (1, 2, \"hi\",) && maths.powf(1.2, 2.6) || version!), println!(\"hello, \" <> \"world!\"))
-        // that's pretty cool :D!
-    ";
+
+        // a block
+        {
+            # demonstration of an example expression
+            println!(1 + 2 * num1 == ((4 + num2.val)) * 6 / (1, 2, "hi",) && maths.powf(1.2, 2.6) || version!);
+            println!("hello, " <> "world!");
+
+            # a nested block
+            {
+                println!({1 + 2; (3 * 4, "cool")});
+            }
+        }
+    "##;
 
     let mut tokens = Token::lexer(&src).spanned();
     let first_tok = tokens.next();
