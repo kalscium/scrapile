@@ -19,7 +19,7 @@ pub fn parse_block(tokens: &mut SpannedIter<'_, Token>) -> Result<(Block, Span),
         Some((Ok(Token::RBrace), span)) => return Ok((Block { stmts, tail: None }, start_span.start..span.end)),
         Some((Ok(token), span)) => Some((Ok(token), span)), // return token
         Some((Err(err), span)) => return Err(vec![KError::Other(span, err)]),
-        None => return Err(vec![KError::Other(tokens.span(), Error::UnclosedBrace)]),
+        None => return Err(vec![KError::Other(tokens.span(), Error::UnclosedBrace { brace_start_span: start_span })]),
     };
 
     // parse first statement
@@ -36,21 +36,21 @@ pub fn parse_block(tokens: &mut SpannedIter<'_, Token>) -> Result<(Block, Span),
                     // no tail return
                     Some((Ok(Token::RBrace), span)) => return Ok((Block { stmts, tail: None }, start_span.start..span.end)),
                     Some((Err(err), span)) => return Err(vec![KError::Other(span, err)]),
-                    None => return Err(vec![KError::Other(tokens.span(), Error::ExpectedSemiOrRBrace)]),
+                    None => return Err(vec![KError::Other(tokens.span(), Error::ExpectedSemiOrRBrace { block_start_span: start_span })]),
 
                     token => {
-                        let (stmt, local_next_tok) = parse_stmt(token, tokens)?; // parse next statement
-                        stmts.push(stmt); // push statement to the stmt list
-                        next_tok = local_next_tok; // update the next token
+                        let (stmt, local_next_tok) = parse_stmt(token, tokens)?;
+                        stmts.push(stmt);
+                        next_tok = local_next_tok;
                     },
                 }
             }
 
             Err(err) => return Err(vec![KError::Other(span, err)]),
-            _ => return Err(vec![KError::Other(span, Error::ExpectedSemiOrRBrace)]),
+            _ => return Err(vec![KError::Other(span, Error::ExpectedSemiOrRBrace { block_start_span: start_span })]),
         }
     }
 
     // this section of code can only be reached when the block is never terminated
-    Err(vec![KError::Other(tokens.span(), Error::UnclosedBrace)])
+    Err(vec![KError::Other(tokens.span(), Error::UnclosedBrace { brace_start_span: start_span })])
 }

@@ -1,6 +1,6 @@
 use ketchup::error::KError;
 use logos::Logos;
-use scrapile::{lang::{error::Error, parser, token::Token}, scratch::{add_console, Expr, Procedure, Statement}};
+use scrapile::{lang::{error::{Error, Reportable}, parser, token::Token}, scratch::{add_console, Expr, Procedure, Statement}};
 
 fn test_scratch() {
     let json = scrapile::scratch::assemble(
@@ -35,6 +35,14 @@ fn test_scratch() {
     scrapile::scratch::write_to_zip("test.sb3", json).unwrap();
 }
 
+fn throw_lang_error<T>(src: &str, errors: &[KError<Error>]) -> T {
+    for error in errors {
+        error.report("<testing>", src);
+    }
+
+    panic!("an error occured");
+}
+
 fn test_lang() {
     let src = r##"
         /*
@@ -57,11 +65,14 @@ fn test_lang() {
 
     let mut tokens = Token::lexer(&src).spanned();
     let first_tok = tokens.next();
-    let ((parsed, _), trailing_tok) = parser::stmt::parse_stmt(first_tok, &mut tokens).unwrap();
+    let ((parsed, _), trailing_tok) = match parser::stmt::parse_stmt(first_tok, &mut tokens) {
+        Ok(ok) => ok,
+        Err(err) => throw_lang_error(src, &err),
+    };
 
     // make sure that there aren't any tokens that haven't been consumed
     if let Some((_, span)) = trailing_tok {
-        panic!("{:?}", KError::Other(span, Error::UnexpectedToken));
+        throw_lang_error(src, &[KError::Other(span, Error::UnexpectedToken)])
     }
 
     println!("{parsed:?}");
