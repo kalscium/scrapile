@@ -9,7 +9,6 @@ pub enum Error {
     UnexpectedToken,
     ExpectedIdent,
     ExpectedStmt,
-    ExpectedCallLParen,
     ExpectedExpr,
 
     UnclosedParentheses {
@@ -23,6 +22,10 @@ pub enum Error {
     },
     ExpectedSemiOrRBrace {
         block_start_span: Span,
+    },
+
+    ExpectedCallLParen {
+        ident_start_span: Span,
     },
 
     ExpectedBlockForMain {
@@ -51,7 +54,6 @@ impl Reportable for KError<Error> {
                 E::UnexpectedToken => ("unexpected token", "unexpected token"),
                 E::ExpectedIdent => ("expected identifier", "found this instead"),
                 E::ExpectedStmt => ("expected statement", "found this instead"),
-                E::ExpectedCallLParen => ("expected the function call to have arguments", "expected `(` found this instead"),
                 E::ExpectedExpr => ("expected an expression", "found this instead"),
 
                 // errors with multiple labels
@@ -118,6 +120,21 @@ impl Reportable for KError<Error> {
                     .eprint((src_id, Source::from(src)))
                     .unwrap(),
 
+                E::ExpectedCallLParen { ident_start_span } => return report
+                    .with_message("expected arguments for this function call")
+                    .with_label(
+                        Label::new((src_id, span.clone()))
+                            .with_message("expected arguments `(`")
+                            .with_color(Color::Red)
+                    )
+                    .with_label(
+                        Label::new((src_id, ident_start_span.clone()))
+                            .with_message("this func call expected args")
+                            .with_color(Color::Blue)
+                    )
+                    .finish()
+                    .eprint((src_id, Source::from(src)))
+                    .unwrap(),
                 E::ExpectedBlockForMain { main_start_span } => return report
                     .with_message("expected a body for the main procedure")
                     .with_label(
