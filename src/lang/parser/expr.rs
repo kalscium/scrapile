@@ -1,6 +1,6 @@
 use ketchup::{error::KError, node::Node, parser::Parser, OperInfo, Space, Span};
 use logos::SpannedIter;
-use crate::lang::{error::Error, token::Token};
+use crate::lang::{error::Error, token::Token, Spanned};
 use super::{block::Block, ident::Call};
 
 #[derive(Debug, Clone)]
@@ -40,7 +40,7 @@ pub enum ExprOper { Integer(u32),
 }
 
 #[inline]
-pub fn parse_expr(first_tok: Option<(Result<Token, Error>, Span)>, tokens: &mut SpannedIter<'_, Token>) -> Result<(Expr, Option<(Token, Span)>), Vec<KError<Error>>> {
+pub fn parse_expr(first_tok: Option<Spanned<Result<Token, Error>>>, tokens: &mut SpannedIter<'_, Token>) -> Result<(Expr, Option<Spanned<Token>>), Vec<KError<Error>>> {
     let start_span = tokens.span();
     let (asa, next_tok) = Parser::<'_, Token, ExprOper, _, Vec<Node<ExprOper>>, _, Error>::new(tokens, oper_generator).parse(first_tok)?;
 
@@ -58,7 +58,7 @@ pub fn parse_expr(first_tok: Option<(Result<Token, Error>, Span)>, tokens: &mut 
     }, next_tok))
 }
 
-fn parse_call_or_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<ExprOper>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Error>>> {
+fn parse_call_or_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<ExprOper>, Option<Spanned<Result<Token, Error>>>)>, Vec<KError<Error>>> {
     let ((oper, span), next_tok) = super::ident::parse_call_or_ident(ident, tokens)?;
 
     Ok(Some((OperInfo {
@@ -69,7 +69,7 @@ fn parse_call_or_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Re
     }, next_tok)))
 }
 
-fn parse_tuple(tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<ExprOper>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Error>>> {
+fn parse_tuple(tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<ExprOper>, Option<Spanned<Result<Token, Error>>>)>, Vec<KError<Error>>> {
     let (tuple, span) = super::tuple::parse_tuple(tokens)?;
 
     Ok(Some((OperInfo {
@@ -80,7 +80,7 @@ fn parse_tuple(tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<E
     }, tokens.next())))
 }
 
-fn parse_block(tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<ExprOper>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Error>>> {
+fn parse_block(tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<ExprOper>, Option<Spanned<Result<Token, Error>>>)>, Vec<KError<Error>>> {
     let (block, span) = super::block::parse_block(tokens)?;
 
     Ok(Some((OperInfo {
@@ -91,7 +91,7 @@ fn parse_block(tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<E
     }, tokens.next())))
 }
 
-fn parse_builtin_func_call(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<ExprOper>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Error>>> {
+fn parse_builtin_func_call(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<ExprOper>, Option<Spanned<Result<Token, Error>>>)>, Vec<KError<Error>>> {
     let ((ident, start_span), next_tok) = super::ident::parse_ident(ident, tokens)?;
 
     // check for args for the builtin func call
@@ -114,7 +114,7 @@ fn parse_builtin_func_call(ident: String, tokens: &mut SpannedIter<'_, Token>) -
     }, next_tok.map(|(tok, span)| (Ok(tok), span)))));
 }
 
-fn oper_generator(token: Token, tokens: &mut SpannedIter<'_, Token>, double_space: bool) -> Result<Option<(OperInfo<ExprOper>, Option<(Result<Token, Error>, Span)>)>, Vec<KError<Error>>> {
+fn oper_generator(token: Token, tokens: &mut SpannedIter<'_, Token>, double_space: bool) -> Result<Option<(OperInfo<ExprOper>, Option<Spanned<Result<Token, Error>>>)>, Vec<KError<Error>>> {
     use Token as T;
     use ExprOper as E;
 

@@ -1,16 +1,16 @@
-use ketchup::{error::KError, Span};
+use ketchup::error::KError;
 use logos::SpannedIter;
-use crate::lang::{error::Error, token::Token};
+use crate::lang::{error::Error, token::Token, Spanned};
 use super::stmt::{parse_stmt, Stmt};
 
 #[derive(Debug, Clone)]
 pub struct Block {
-    pub stmts: Vec<(Stmt, Span)>,
-    pub tail: Option<(Stmt, Span)>,
+    pub stmts: Vec<Spanned<Stmt>>,
+    pub tail: Option<Spanned<Stmt>>,
 }
 
 /// Parses a block (given that the `LBrace` token as alredy been consumed)
-pub fn parse_block(tokens: &mut SpannedIter<'_, Token>) -> Result<(Block, Span), Vec<KError<Error>>> {
+pub fn parse_block(tokens: &mut SpannedIter<'_, Token>) -> Result<Spanned<Block>, Vec<KError<Error>>> {
     let start_span = tokens.span();
     let mut stmts = Vec::new();
 

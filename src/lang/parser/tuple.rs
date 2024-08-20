@@ -1,10 +1,10 @@
-use ketchup::{error::KError, Span};
+use ketchup::error::KError;
 use logos::SpannedIter;
-use crate::lang::{error::Error, token::Token};
+use crate::lang::{error::Error, token::Token, Spanned};
 use super::expr::{parse_expr, Expr};
 
 /// Parses a tuple (given that the `LParen` token has already been consumed)
-pub fn parse_tuple(tokens: &mut SpannedIter<'_, Token>) -> Result<(Vec<Expr>, Span), Vec<KError<Error>>> {
+pub fn parse_tuple(tokens: &mut SpannedIter<'_, Token>) -> Result<Spanned<Vec<Expr>>, Vec<KError<Error>>> {
     let start_span = tokens.span();
     let mut exprs = Vec::new();
 
