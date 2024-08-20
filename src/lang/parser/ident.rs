@@ -1,6 +1,6 @@
 use ketchup::error::KError;
 use logos::SpannedIter;
-use crate::lang::{error::Error, token::Token, Spanned};
+use crate::lang::{error::parser::Error, token::Token, Spanned};
 use super::{expr::{Expr, ExprOper}, tuple::parse_tuple};
 
 #[derive(Debug, Clone)]
@@ -50,7 +50,7 @@ pub fn parse_call(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<
     }
 
     // if there are no tokens following the identifier or there isn't a LParen following the ident
-    Err(vec![KError::Other(tokens.span(), Error::ExpectedCallLParen { ident_start_span: start_span })])
+    Err(vec![KError::Other(tokens.span(), Error::ExpectedCallLParen { ctx_span: start_span })])
 }
 
 pub fn parse_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<(Spanned<Vec<String>>, Option<Spanned<Token>>), Vec<KError<Error>>> {

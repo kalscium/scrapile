@@ -2,7 +2,7 @@
 
 use ketchup::error::KError;
 use logos::SpannedIter;
-use crate::lang::{error::Error, parser::block::parse_block, token::Token};
+use crate::lang::{error::parser::Error, parser::block::parse_block, token::Token};
 use super::block::Block;
 
 #[derive(Debug, Clone)]
@@ -36,7 +36,7 @@ pub fn parse_main(tokens: &mut SpannedIter<'_, Token>) -> Result<Block, Vec<KErr
     // ensure that there is a `LBrace`
     match tokens.next() {
         Some((Ok(Token::LBrace), _)) => (),
-        _ => return Err(vec![KError::Other(tokens.span(), Error::ExpectedBlockForMain { main_start_span: start_span })]),
+        _ => return Err(vec![KError::Other(tokens.span(), Error::ExpectedBlockForMain { ctx_span: start_span })]),
     }
     
     let (block, _) = parse_block(tokens)?; // parse body

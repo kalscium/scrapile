@@ -1,0 +1,99 @@
+use ariadne::{Color, Label, Report, ReportKind, Source};
+use ketchup::{error::KError, Span};
+use super::Reportable;
+
+/// Errors for scrapile
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub enum Error {
+    /// Occurs when there is a character that the lexer does not recognise
+    #[default]
+    UnexpectedCharacter,
+
+    /// Occurs when there is a token that the parser does not expect
+    UnexpectedToken,
+    /// Occurs when an identifier is expected but not found
+    ExpectedIdent,
+    /// Occurs when a statement is expected but not found
+    ExpectedStmt,
+    /// Occurs when a expression is expected but not found
+    ExpectedExpr,
+
+    /// Occurs when there is an unclosed parentheses
+    UnclosedParentheses {
+        /// The location of the start of the parentheses
+        ctx_span: Span,
+    },
+    /// Occurs when there is an unclosed brace
+    UnclosedBrace {
+        /// The location of the start of the brace
+        ctx_span: Span,
+    },
+    /// Occurs when there is a token besides a comma or right-parenthesis
+    ExpectedCommaOrRParen {
+        /// The location of the start of the tuple
+        ctx_span: Span,
+    },
+    /// Occurs when there is a token besides a semi-colon or right-brace
+    ExpectedSemiOrRBrace {
+        /// The location of the start of the block
+        ctx_span: Span,
+    },
+
+    /// Occurs when args for a function are expected but not found
+    ExpectedCallLParen {
+        /// The location of the start of the parentheses
+        ctx_span: Span,
+    },
+
+    /// Occurs when block body of the main procedure is expected but not found
+    ExpectedBlockForMain {
+        /// The location of the start of the parentheses
+        ctx_span: Span,
+    },
+}
+
+impl Reportable for KError<Error> {
+    fn report(&self, src_id: &str, src: &str) {
+        use KError as K;
+        use Error as E;
+
+        let report = Report::build(ReportKind::Error, src_id, 10);
+
+        let (msg, span, label, ctx_span, ctx_label) = match self.clone() {
+            K::DoubleSpaceConflict { ctx_span, span } => ("expected an expression", span, "found this instead", ctx_span, "expected an expr as an input"),
+            K::UnexpectedOper { ctx_span, span } => ("unexpected operation", span, "unexpected operation", ctx_span, "did not expect an operation after this"),
+            K::ExpectedOper { ctx_span, span, precedence: _ } => ("expected operation", span, "found this instead", ctx_span, "expected an expr after this"),
+
+            K::Other(span, other) => match other {
+                E::UnexpectedCharacter => ("unexpected or invalid character", span.clone(), "unexpected character", span, "occured here"),
+                E::UnexpectedToken => ("unexpected token", span.clone(), "unexpected token", span, "occured here"),
+                E::ExpectedIdent => ("expected identifier", span.clone(), "found this instead", span, "occured here"),
+                E::ExpectedStmt => ("expected statement", span.clone(), "found this instead", span, "occured here"),
+                E::ExpectedExpr => ("expected an expression", span.clone(), "found this instead", span, "occured here"),
+
+                E::UnclosedParentheses { ctx_span } => ("unclosed parentheses", span, "expected `)`", ctx_span, "to complete this tuple"),
+                E::UnclosedBrace { ctx_span } => ("unclosed brace", span, "expected `}`", ctx_span, "to complete this block"),
+                E::ExpectedCommaOrRParen { ctx_span } => ("expected comma or right parenthesis", span, "expected `,`, `)`", ctx_span, "to continue or complete this tuple"),
+                E::ExpectedSemiOrRBrace { ctx_span } => ("expected semi-colon or right brace", span, "expected `;` or `}`", ctx_span, "to continue or complete this block"),
+                E::ExpectedCallLParen { ctx_span } => ("expected arguments for this function call", span, "expected arguments `(`", ctx_span, "this func call expected args" ),
+                E::ExpectedBlockForMain { ctx_span } => ("expected a body for the main procedure", span, "expected body `{`", ctx_span, "expected due to the `main` keyword"),
+            },
+        };
+
+        report
+            .with_message(msg)
+            .with_label(
+                Label::new((src_id, span))
+                    .with_message(label)
+                    .with_color(Color::Red),
+            )
+            .with_label(
+                Label::new((src_id, ctx_span))
+                    .with_message(ctx_label)
+                    .with_color(Color::BrightBlue),
+            )
+            .finish()
+            .eprint((src_id, Source::from(src)))
+            .unwrap();
+    }
+}

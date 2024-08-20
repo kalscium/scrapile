@@ -1,6 +1,6 @@
 use ketchup::error::KError;
 use logos::SpannedIter;
-use crate::lang::{error::Error, token::Token, Spanned};
+use crate::lang::{error::parser::Error, token::Token, Spanned};
 use super::expr::{parse_expr, Expr};
 
 /// Parses a tuple (given that the `LParen` token has already been consumed)
@@ -19,7 +19,7 @@ pub fn parse_tuple(tokens: &mut SpannedIter<'_, Token>) -> Result<Spanned<Vec<Ex
             // return token
             Some((Ok(token), span))
         },
-        None => return Err(vec![KError::Other(tokens.span(), Error::UnclosedParentheses { paren_start_span: start_span })]), // if there is never a `)`
+        None => return Err(vec![KError::Other(tokens.span(), Error::UnclosedParentheses { ctx_span: start_span })]), // if there is never a `)`
     };
 
     // parse first expr
@@ -33,7 +33,7 @@ pub fn parse_tuple(tokens: &mut SpannedIter<'_, Token>) -> Result<Spanned<Vec<Ex
                 match tokens.next() {
                     Some((Ok(Token::RParen), span)) => return Ok((exprs, start_span.start..span.end)),
                     Some((Err(err), span)) => return Err(vec![KError::Other(span, err)]),
-                    None => return Err(vec![KError::Other(tokens.span(), Error::ExpectedCommaOrRParen { tuple_start_span: start_span })]),
+                    None => return Err(vec![KError::Other(tokens.span(), Error::ExpectedCommaOrRParen { ctx_span: start_span })]),
 
                     token => {
                         let (expr, local_next_tok) = parse_expr(token, tokens)?; // parse next expr
@@ -42,10 +42,10 @@ pub fn parse_tuple(tokens: &mut SpannedIter<'_, Token>) -> Result<Spanned<Vec<Ex
                     },
                 }
             },
-            _ => return Err(vec![KError::Other(span, Error::ExpectedCommaOrRParen { tuple_start_span: start_span })]),
+            _ => return Err(vec![KError::Other(span, Error::ExpectedCommaOrRParen { ctx_span: start_span })]),
         }
     }
 
     // this section of code can only be reached when the tuple is never terminated with `)`
-    Err(vec![KError::Other(tokens.span(), Error::UnclosedParentheses { paren_start_span: start_span })])
+    Err(vec![KError::Other(tokens.span(), Error::UnclosedParentheses { ctx_span: start_span })])
 }

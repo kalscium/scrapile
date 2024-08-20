@@ -1,6 +1,6 @@
 use ketchup::error::KError;
 use logos::Logos;
-use scrapile::{lang::{error::{Error, Reportable}, parser, token::Token}, scratch::{add_console, Expr, Procedure, Statement}};
+use scrapile::{lang::{error::{parser::Error, Reportable}, parser, token::Token}, scratch::{add_console, Expr, Procedure, Statement}};
 
 fn test_scratch() {
     let json = scrapile::scratch::assemble(

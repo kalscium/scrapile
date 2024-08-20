@@ -1,6 +1,6 @@
 use ketchup::error::KError;
 use logos::SpannedIter;
-use crate::lang::{error::Error, token::Token, Spanned};
+use crate::lang::{error::parser::Error, token::Token, Spanned};
 use super::expr::{parse_expr, Expr};
 
 #[derive(Debug, Clone)]

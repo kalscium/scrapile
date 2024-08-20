@@ -1,6 +1,6 @@
 use ketchup::{error::KError, node::Node, parser::Parser, OperInfo, Space, Span};
 use logos::SpannedIter;
-use crate::lang::{error::Error, token::Token, Spanned};
+use crate::lang::{error::parser::Error, token::Token, Spanned};
 use super::{block::Block, ident::Call};
 
 #[derive(Debug, Clone)]
