@@ -22,7 +22,7 @@ pub fn parse_root(tokens: &mut SpannedIter<'_, Token>) -> Result<Vec<Root>, Vec<
 
             Ok(Token::Main) => roots.push(Root::Main(parse_main(tokens)?)),
             
-            _ => return Err(vec![KError::Other(span, Error::UnexpectedToken)]),
+            _ => return Err(vec![KError::Other(span, Error::ExpectedRoot)]),
         }
     }
 

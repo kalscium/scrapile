@@ -9,14 +9,12 @@ pub enum Error {
     #[default]
     UnexpectedCharacter,
 
-    /// Occurs when there is a token that the parser does not expect
-    UnexpectedToken,
-    /// Occurs when an identifier is expected but not found
-    ExpectedIdent,
     /// Occurs when a statement is expected but not found
     ExpectedStmt,
     /// Occurs when a expression is expected but not found
     ExpectedExpr,
+    /// Occurs when the parser expects a root token (like `main` or `fn`) but find an unexpected one instead
+    ExpectedRoot,
 
     /// Occurs when there is an unclosed parentheses
     UnclosedParentheses {
@@ -65,11 +63,10 @@ impl Reportable for KError<Error> {
             K::ExpectedOper { ctx_span, span, precedence: _ } => ("expected operation", span, "found this instead", ctx_span, "expected an expr after this"),
 
             K::Other(span, other) => match other {
-                E::UnexpectedCharacter => ("unexpected or invalid character", span.clone(), "unexpected character", span, "occured here"),
-                E::UnexpectedToken => ("unexpected token", span.clone(), "unexpected token", span, "occured here"),
-                E::ExpectedIdent => ("expected identifier", span.clone(), "found this instead", span, "occured here"),
-                E::ExpectedStmt => ("expected statement", span.clone(), "found this instead", span, "occured here"),
-                E::ExpectedExpr => ("expected an expression", span.clone(), "found this instead", span, "occured here"),
+                E::UnexpectedCharacter => ("unexpected or invalid character", span.clone(), "unexpected character", span, "consider removing this"),
+                E::ExpectedStmt => ("expected statement", span.clone(), "found this instead", span, "consider removing this or inserting a statement"), // assuming it's an error caused by `;;`
+                E::ExpectedExpr => ("expected an expression", span.clone(), "found this instead", span, "consider removing this or inserting an expression"),
+                E::ExpectedRoot => ("expected root token", span.clone(), "expected a root token like `main` or `fn ...`", span, "consider wrapping this in a `main { ... }` or function"),
 
                 E::UnclosedParentheses { ctx_span } => ("unclosed parentheses", span, "expected `)`", ctx_span, "to complete this tuple"),
                 E::UnclosedBrace { ctx_span } => ("unclosed brace", span, "expected `}`", ctx_span, "to complete this block"),

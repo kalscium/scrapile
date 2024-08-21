@@ -58,7 +58,7 @@ fn test_lang() {
 
             // a nested block
             {
-                println!({1 + 2; (3 * 4, "cool")});
+                println!({1 + 2; (3 * 4, "cool",)});
             }
         }
     "##;
