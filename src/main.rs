@@ -8,7 +8,7 @@ fn test_scratch() {
             Statement::PushList { ident: "console".to_string(), value: Expr::String("hello, world!".to_string()) },
             Statement::SetVar { ident: "myvar".to_string(), value: Expr::PosInteger(49) },
             Statement::PushList { ident: "console".to_string(), value: Expr::String("that's pretty cool".to_string()) },
-            Statement::PushList { ident: "mylist".to_string(), value: Expr::Number(128.0) },
+            Statement::PushList { ident: "mylist".to_string(), value: Expr::Float(128.0) },
             Statement::PushList { ident: "console".to_string(), value: Expr::Variable { ident: "myvar".to_string() } },
             Statement::PushList { ident: "console".to_string(), value: Expr::ListLength { ident: "mylist".to_string() } },
             Statement::PushList { ident: "console".to_string(), value: Expr::ListElement { ident: "mylist".to_string(), idx: Box::new(Expr::Integer(1)) } },
@@ -54,7 +54,7 @@ fn test_lang() {
         main {
             # demonstration of an example expression
             println!(1 + 2 * num1 == ((4 + num2.val)) * 6 / (1, 2, "hi",) && maths.powf(1.2, 2.6) || version!);
-            println!("hello, " <> "world!");
+            println!("hello, " <> "world!" + nice.say("hello") / person.(nice).file);
 
             // a nested block
             {

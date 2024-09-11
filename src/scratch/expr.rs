@@ -6,7 +6,7 @@ use super::Condition;
 /// An expression in scratch (returns a value)
 #[derive(Debug, Clone)] pub enum Expr {
     // Atoms
-    Number(f32),
+    Float(f32),
     PosNumber(f32),
     PosInteger(u32),
     Integer(i32),
@@ -34,7 +34,7 @@ pub(super) fn parse_expr(expr: Expr, expr_blocks: &mut Vec<JsonValue>) -> JsonVa
 
     match expr {
         // basic numbers & strings
-        E::Number(num) => array![ 4, num ],
+        E::Float(num) => array![ 4, num ],
         E::PosNumber(num) => array![ 5, num ],
         E::PosInteger(num) => array![ 6, num ],
         E::Integer(num) => array![ 7, num ],
