@@ -14,8 +14,8 @@ pub enum Type {
 impl Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", match self {
-            Type::Number => "number",
-            Type::String => "string",
+            Type::Number => "num",
+            Type::String => "str",
             Type::Custom { .. } => todo!(),
         })
     }

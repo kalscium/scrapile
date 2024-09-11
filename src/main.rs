@@ -69,8 +69,7 @@ fn test_lang() {
         Err(err) => throw_lang_error(src, &err),
     };
 
-    // let src = r##"--20 + 2 * 4 / ---2 - 6"##;
-    let src = r##""not allowed" <> 1 * 2"##;
+    let src = r##"--20 + 2 * 4 / ---2 - 6 <> "not allowed""##;
     let mut tokens = Token::lexer(src).spanned();
     let (asa, _) = match parser::expr::parse_expr(tokens.next(), &mut tokens) {
         Ok(ok) => ok,

@@ -42,8 +42,8 @@ impl Reportable for Error {
         let report = Report::build(ReportKind::Error, src_id, 10);
 
         let (msg, span, label, ctx_span, ctx_label) = match self {
-            E::ArithmeticNonNumber { oper_span, oper_type, value_span, value_type } => ("cannot perform mathmatical operations on non-numbers".to_string(), oper_span, format!("cannot {oper_type} a `{value_type}`"), value_span, format!("expected a `number`, found a `{value_type}`")),
-            E::ConcatNonString { oper_span, value_span, value_type } => ("cannot concatinate non-strings".to_string(), oper_span, format!("cannot concat a `{value_type}`"), value_span, format!("expected a `string`, found a `{value_type}`")),
+            E::ArithmeticNonNumber { oper_span, oper_type, value_span, value_type } => ("cannot perform mathmatical operations on non-number types".to_string(), oper_span, format!("cannot perform an {oper_type} operation an expr of type `{value_type}`"), value_span, format!("expected an expr of type `num`, instead found an expr of type `{value_type}`")),
+            E::ConcatNonString { oper_span, value_span, value_type } => ("cannot concatinate non-string types".to_string(), oper_span, format!("cannot concat an expr of type `{value_type}`"), value_span, format!("expected an expr of type `str`, instead found an expr of type `{value_type}`")),
         };
 
         report
