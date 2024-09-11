@@ -129,7 +129,7 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], _symbol_table: &TypeTable) -> Result<(T
             }
 
             // return typed add operation
-            let span = asa[0].info.span.start..rhs.0.1.end;
+            let span = lhs.0.1.start..rhs.0.1.end;
             (
                 (
                     (
@@ -168,7 +168,7 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], _symbol_table: &TypeTable) -> Result<(T
             }
 
             // return typed add operation
-            let span = asa[0].info.span.start..rhs.0.1.end;
+            let span = lhs.0.1.start..rhs.0.1.end;
             (
                 (
                     (
@@ -207,7 +207,7 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], _symbol_table: &TypeTable) -> Result<(T
             }
 
             // return typed add operation
-            let span = asa[0].info.span.start..rhs.0.1.end;
+            let span = lhs.0.1.start..rhs.0.1.end;
             (
                 (
                     (
@@ -246,7 +246,46 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], _symbol_table: &TypeTable) -> Result<(T
             }
 
             // return typed add operation
-            let span = asa[0].info.span.start..rhs.0.1.end;
+            let span = lhs.0.1.start..rhs.0.1.end;
+            (
+                (
+                    (
+                        TExpr::Div(Box::new(lhs), Box::new(rhs)), // value
+                        span, // span
+                    ),
+                    Type::Number, // type
+                ),
+                idx1 + idx + 2, // the current idx (accounting for offsets)
+            )
+        },
+
+        // A change of pace where only strings are allowed instead of numbers
+        EO::Concat => {
+            // wrap the left-hand side of this operation
+            let (lhs, idx) = wrap_expr(&asa[1..], _symbol_table)?;
+            // wrap the rigth-hand side of this operation
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], _symbol_table)?;
+
+            // make sure lhs is of type string, otherwise throw error
+            if lhs.1 != Type::String {
+                return Err(Error::ConcatNonString {
+                    oper_span: asa[0].info.span.clone(),
+                    value_span: lhs.0.1.clone(),
+                    value_type: lhs.1,
+                });
+            }
+
+            // make sure rhs is of type number, otherwise throw error
+            if rhs.1 != Type::String {
+                return Err(Error::ConcatNonString {
+                    oper_span: asa[0].info.span.clone(),
+                    value_span: rhs.0.1.clone(),
+                    value_type: rhs.1,
+                });
+            }
+
+            // return typed add operation
+            let span = lhs.0.1.start..rhs.0.1.end;
             (
                 (
                     (

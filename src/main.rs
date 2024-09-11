@@ -69,17 +69,18 @@ fn test_lang() {
         Err(err) => throw_lang_error(src, &err),
     };
 
-    let src = r##"--20 + 2 * 4 / "woah string" - 6"##;
+    // let src = r##"--20 + 2 * 4 / ---2 - 6"##;
+    let src = r##""not allowed" <> 1 * 2"##;
     let mut tokens = Token::lexer(src).spanned();
     let (asa, _) = match parser::expr::parse_expr(tokens.next(), &mut tokens) {
         Ok(ok) => ok,
         Err(err) => throw_lang_error(src, &err),
     };
+    println!("asa: {asa:?}\n");
     let typed = match typed::expr::wrap_expr(&asa.asa, &TypeTable(HashMap::new())) {
         Ok(ok) => ok,
         Err(err) => throw_lang_error(src, &[err]),
     };
-    println!("asa: {asa:?}\n");
     println!("typed: {typed:?}");
 
     // println!("{parsed:?}");

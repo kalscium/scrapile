@@ -21,6 +21,18 @@ pub enum Error {
         /// The type of the non-number
         value_type: Type,
     },
+
+    /// Occurs when you try to concat a non-string
+    ConcatNonString {
+        /// The span of the concat operator
+        oper_span: Span,
+
+        /// The span of the non-string
+        value_span: Span,
+
+        /// The type of the non-string
+        value_type: Type,
+    },
 }
 
 impl Reportable for Error {
@@ -30,7 +42,8 @@ impl Reportable for Error {
         let report = Report::build(ReportKind::Error, src_id, 10);
 
         let (msg, span, label, ctx_span, ctx_label) = match self {
-            E::ArithmeticNonNumber { oper_span, oper_type, value_span, value_type } => ("cannot perform mathmatical operations on non-numbers".to_string(), oper_span, format!("cannot {} a '{}'", oper_type, value_type), value_span, format!("expected a 'number', found a '{}'", value_type)),
+            E::ArithmeticNonNumber { oper_span, oper_type, value_span, value_type } => ("cannot perform mathmatical operations on non-numbers".to_string(), oper_span, format!("cannot {oper_type} a `{value_type}`"), value_span, format!("expected a `number`, found a `{value_type}`")),
+            E::ConcatNonString { oper_span, value_span, value_type } => ("cannot concatinate non-strings".to_string(), oper_span, format!("cannot concat a `{value_type}`"), value_span, format!("expected a `string`, found a `{value_type}`")),
         };
 
         report
