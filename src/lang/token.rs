@@ -10,10 +10,9 @@ use crate::lang::error::parser::Error;
 #[logos(skip r"\/\*[^\*\/]*\*\/")] // multi-line comments
 pub enum Token {
     // Literals
-    #[regex(r"[0-9]+", |lex| lex.slice().parse::<u32>().unwrap())]
-    Integer(u32),
+    #[regex(r"[0-9]+", |lex| lex.slice().parse::<f64>().unwrap())]
     #[regex(r"[0-9]+\.[0-9]+", |lex| lex.slice().parse::<f64>().unwrap())]
-    Float(f64),
+    Number(f64),
     #[regex(r#""([^"\\]|\\["\\bnfrt]|u[a-fA-F0-9]{4})*""#, |lex| lex.slice()[1..lex.slice().len()-1].to_owned())]
     String(String),
     #[regex(r"true|false", |lex| lex.slice() == "true")]

@@ -1,12 +1,11 @@
 use ketchup::node::Node;
-use crate::lang::parser::{block::Block, expr::ExprOper};
+use crate::lang::{parser::{block::Block, expr::ExprOper}, typed::types::Type};
 use super::{symbol_table::TypeTable, types::Typed};
 
 /// A tree version of expr for type annotation
 #[derive(Debug)]
 pub enum TExpr {
-    Integer(u32),
-    Float(f64),
+    Number(f64),
     String(String),
     Ident(String),
 
@@ -38,11 +37,14 @@ pub enum TExpr {
 }
 
 /// Wraps an expr with types
-pub fn wrap_expr(asa: &[Node<ExprOper>], symbol_table: &TypeTable) -> Typed<TExpr> {
-    // wrap the exprs
-    for node in asa {
-        todo!()
-    }
+pub fn wrap_expr(asa: &[Node<ExprOper>], _symbol_table: &TypeTable) -> Typed<TExpr> {
+    use ExprOper as EO;
 
-    todo!()
+    match &asa[0].oper {
+        // literals
+        EO::Number(num) => (TExpr::Number(*num), Type::Number),
+        EO::String(string) => (TExpr::String(string.clone()), Type::String),
+
+        _ => todo!(),
+    }
 }

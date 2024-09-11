@@ -11,8 +11,7 @@ pub struct Expr {
 
 #[derive(Debug, Clone)]
 pub enum ExprOper {
-    Integer(u32),
-    Float(f64),
+    Number(f64),
     String(String),
     Ident(String),
 
@@ -153,8 +152,7 @@ fn oper_generator(token: Token, tokens: &mut SpannedIter<'_, Token>, double_spac
 
     let (precedence, space, oper) = match (token, double_space) {
         // literals
-        (T::Integer(int), _) => (0, Space::None, E::Integer(int)),
-        (T::Float(f), _) => (0, Space::None, E::Float(f)),
+        (T::Number(num), _) => (0, Space::None, E::Number(num)),
         (T::String(str), _) => (0, Space::None, E::String(str)),
 
         // identifiers
