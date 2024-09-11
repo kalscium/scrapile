@@ -1,8 +1,6 @@
 use std::collections::HashMap;
-
-use ketchup::error::KError;
 use logos::Logos;
-use scrapile::{lang::{error::{parser::Error, Reportable}, parser, token::Token, typed::{self, symbol_table::TypeTable}}, scratch::{add_console, Expr, Procedure, Statement}};
+use scrapile::{lang::{error::Reportable, parser, token::Token, typed::{self, symbol_table::TypeTable}}, scratch::{add_console, Expr, Procedure, Statement}};
 
 fn test_scratch() {
     let json = scrapile::scratch::assemble(
@@ -37,7 +35,7 @@ fn test_scratch() {
     scrapile::scratch::write_to_zip("test.sb3", json).unwrap();
 }
 
-fn throw_lang_error<T>(src: &str, errors: &[KError<Error>]) -> T {
+fn throw_lang_error<T>(src: &str, errors: &[impl Reportable]) -> T {
     for error in errors {
         error.report("<testing>", src);
     }
@@ -71,12 +69,17 @@ fn test_lang() {
         Err(err) => throw_lang_error(src, &err),
     };
 
-    let mut tokens = Token::lexer("\"hello, world\"").spanned();
+    let src = r##"-+-+"hello, world!""##;
+    let mut tokens = Token::lexer(src).spanned();
     let (asa, _) = match parser::expr::parse_expr(tokens.next(), &mut tokens) {
         Ok(ok) => ok,
         Err(err) => throw_lang_error(src, &err),
     };
-    let typed = typed::expr::wrap_expr(&asa.asa, &TypeTable(HashMap::new()));
+    let typed = match typed::expr::wrap_expr(&asa.asa, &TypeTable(HashMap::new())) {
+        Ok(ok) => ok,
+        Err(err) => throw_lang_error(src, &[err]),
+    };
+    println!("asa: {asa:?}\n");
     println!("typed: {typed:?}");
 
     // println!("{parsed:?}");

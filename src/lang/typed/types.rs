@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum Type {
     Number,
@@ -7,6 +9,16 @@ pub enum Type {
         ident: String,
         properties: Vec<Type>,
     },
+}
+
+impl Display for Type {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            Type::Number => "number",
+            Type::String => "string",
+            Type::Custom { .. } => todo!(),
+        })
+    }
 }
 
 pub type Typed<T> = (T, Type);

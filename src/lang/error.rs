@@ -1,4 +1,5 @@
 pub mod parser;
+pub mod typed;
 
 pub trait Reportable {
     /// Prints the error to stderr

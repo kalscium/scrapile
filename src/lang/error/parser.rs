@@ -2,7 +2,7 @@ use ariadne::{Color, Label, Report, ReportKind, Source};
 use ketchup::{error::KError, Span};
 use super::Reportable;
 
-/// Errors for scrapile
+/// Parsing errors for scrapile
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub enum Error {
     /// Occurs when there is a character that the lexer does not recognise
