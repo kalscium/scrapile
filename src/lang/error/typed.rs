@@ -7,23 +7,18 @@ use super::Reportable;
 /// Type errors for scrapile
 #[derive(Debug, PartialEq, Eq)]
 pub enum Error {
-    /// Occurs when you try to negate (`-`) something besides a number
-    CanOnlyNegNumber {
-        /// The span of the symbol
+    /// Occurs when you try to perform maths on a non-number
+    ArithmeticNonNumber {
+        /// The span of the oper symbol
         oper_span: Span,
-        /// The span of the value you're trying to negate
-        value_span: Span,
-        /// The type of the value you're trying to negate
-        value_type: Type,
-    },
 
-    /// Occurs when you try to pos (`+`) something besides a number
-    CanOnlyPosNumber {
-        /// The span of the symbol
-        oper_span: Span,
-        /// The span of the value you're trying to pos
+        /// The type of operation
+        oper_type: &'static str,
+
+        /// The span of the non-number
         value_span: Span,
-        /// The type of the value you're trying to pos
+
+        /// The type of the non-number
         value_type: Type,
     },
 }
@@ -35,8 +30,7 @@ impl Reportable for Error {
         let report = Report::build(ReportKind::Error, src_id, 10);
 
         let (msg, span, label, ctx_span, ctx_label) = match self {
-            E::CanOnlyNegNumber { oper_span: negate_span, value_span, value_type } => (format!("cannot negate value of type '{}'", value_type), negate_span, "expected a number to negate".to_string(), value_span, format!("instead found value of type '{}'", value_type)),
-            E::CanOnlyPosNumber { oper_span: negate_span, value_span, value_type } => (format!("cannot pos value of type '{}'", value_type), negate_span, "expected a number to pos".to_string(), value_span, format!("instead found value of type '{}'", value_type)),
+            E::ArithmeticNonNumber { oper_span, oper_type, value_span, value_type } => ("cannot perform mathmatical operations on non-numbers".to_string(), oper_span, format!("cannot {} a '{}'", oper_type, value_type), value_span, format!("expected a 'number', found a '{}'", value_type)),
         };
 
         report

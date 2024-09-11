@@ -69,7 +69,7 @@ fn test_lang() {
         Err(err) => throw_lang_error(src, &err),
     };
 
-    let src = r##"-+-+"hello, world!""##;
+    let src = r##"--20 + 2 * 4 / "woah string" - 6"##;
     let mut tokens = Token::lexer(src).spanned();
     let (asa, _) = match parser::expr::parse_expr(tokens.next(), &mut tokens) {
         Ok(ok) => ok,
