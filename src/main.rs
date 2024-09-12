@@ -53,7 +53,7 @@ fn test_lang() {
         /// The main procedure of this program
         main {
             # demonstration of an example expression
-            println!(1 + 2 * num1 == ((4 + num2.val)) * 6 / (1, 2, "hi",) && maths.powf(1.2, 2.6) || version!);
+            println!(1 + 2 * num1 == ((4 + num2.val)) * 6 / (1, 2, "hi",) && maths.powf(1.2f, 2.6f) || version!);
             println!("hello, " <> "world!" + nice.say("hello") / person.(nice).file);
 
             // a nested block
@@ -69,7 +69,7 @@ fn test_lang() {
         Err(err) => throw_lang_error(src, &err),
     };
 
-    let src = r##"(--20 + 2) * ((4)) / ---2 - 6 <> "not allowed" <> ("a", 1, "tuple")"##;
+    let src = r##"(--20 + 2) * ((4)) / ---2 - 6.0f <> "not allowed" <> ("a", 1, "tuple")"##;
     let mut tokens = Token::lexer(src).spanned();
     let (asa, _) = match parser::expr::parse_expr(tokens.next(), &mut tokens) {
         Ok(ok) => ok,

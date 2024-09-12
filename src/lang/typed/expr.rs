@@ -7,16 +7,13 @@ use super::{symbol_table::TypeTable, types::Typed};
 pub enum TExpr {
     Number(f64),
     String(String),
-    Ident(String),
-    Nill,
+    Bool(bool),
+    Nil,
 
-    Add(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>),
-    Sub(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>),
+    Add(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>), Sub(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>),
     Mul(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>),
     Div(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>),
     Concat(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>),
-
-    DotAccess(u32),
 
     Neg(Box<Typed<Spanned<TExpr>>>),
     Pos(Box<Typed<Spanned<TExpr>>>),
@@ -44,6 +41,8 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], _type_table: &TypeTable) -> Result<(Typ
         // literals
         EO::Number(num) => (((TExpr::Number(*num), asa[0].info.span.clone()), Type::Number), 0),
         EO::String(string) => (((TExpr::String(string.clone()), asa[0].info.span.clone()), Type::String), 0),
+        EO::Bool(bool) => (((TExpr::Bool(*bool), asa[0].info.span.clone()), Type::Bool), 0),
+        EO::Nil => (((TExpr::Nil, asa[0].info.span.clone()), Type::Nil), 0),
 
         // tuples
         EO::Tuple(exprs) => {
@@ -59,7 +58,7 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], _type_table: &TypeTable) -> Result<(Typ
 
             // if the tuple is empty, return a nill insetad
             if typed_exprs.is_empty() {
-                return Ok((((TExpr::Nill, asa[0].info.span.clone()), Type::Nill), 0));
+                return Ok((((TExpr::Nil, asa[0].info.span.clone()), Type::Nil), 0));
             }
 
             // if the tuple only has one member, expand it

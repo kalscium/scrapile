@@ -14,6 +14,8 @@ pub enum ExprOper {
     Number(f64),
     String(String),
     Ident(String),
+    Bool(bool),
+    Nil,
 
     Add,
     Sub,
@@ -154,6 +156,8 @@ fn oper_generator(token: Token, tokens: &mut SpannedIter<'_, Token>, double_spac
         // literals
         (T::Number(num), _) => (0, Space::None, E::Number(num)),
         (T::String(str), _) => (0, Space::None, E::String(str)),
+        (T::Bool(bool), _) => (0, Space::None, E::Bool(bool)),
+        (T::Nil, _) => (0, Space::None, E::Nil),
 
         // identifiers
         (T::Ident(ident), _) => return parse_call_or_ident(ident, tokens).map(|(info, next)| Some((info, next))),
