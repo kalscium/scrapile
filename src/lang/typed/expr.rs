@@ -8,6 +8,7 @@ pub enum TExpr {
     Number(f64),
     String(String),
     Ident(String),
+    Nill,
 
     Add(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>),
     Sub(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>),
@@ -33,11 +34,10 @@ pub enum TExpr {
     Tuple(Vec<Typed<Spanned<TExpr>>>),
     Call(String, Vec<Typed<Spanned<TExpr>>>),
     BuiltinFnCall(String, Vec<Vec<Typed<Spanned<TExpr>>>>),
-    Block(Typed<Spanned<Block>>),
-}
+    Block(Typed<Spanned<Block>>), }
 
 /// Wraps an expr with types and also returns it's current location in the asa
-pub fn wrap_expr(asa: &[Node<ExprOper>], _symbol_table: &TypeTable) -> Result<(Typed<Spanned<TExpr>>, usize), Error> {
+pub fn wrap_expr(asa: &[Node<ExprOper>], _type_table: &TypeTable) -> Result<(Typed<Spanned<TExpr>>, usize), Error> {
     use ExprOper as EO;
 
     Ok(match &asa[0].oper {
@@ -45,10 +45,45 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], _symbol_table: &TypeTable) -> Result<(T
         EO::Number(num) => (((TExpr::Number(*num), asa[0].info.span.clone()), Type::Number), 0),
         EO::String(string) => (((TExpr::String(string.clone()), asa[0].info.span.clone()), Type::String), 0),
 
+        // tuples
+        EO::Tuple(exprs) => {
+            let mut types = Vec::new();
+            let mut typed_exprs = Vec::new();
+
+            // append the types stored in the tuple
+            for expr in exprs {
+                let ((expr, ttype), _) = wrap_expr(&expr.asa, _type_table)?;
+                types.push(ttype.clone());
+                typed_exprs.push((expr, ttype));
+            }
+
+            // if the tuple is empty, return a nill insetad
+            if typed_exprs.is_empty() {
+                return Ok((((TExpr::Nill, asa[0].info.span.clone()), Type::Nill), 0));
+            }
+
+            // if the tuple only has one member, expand it
+            if typed_exprs.len() == 1 {
+                return Ok((typed_exprs.pop().unwrap(), 0));
+            }
+
+            // return tuple
+            (
+                (
+                    (
+                        TExpr::Tuple(typed_exprs),
+                        asa[0].info.span.clone(),
+                    ),
+                    Type::Tuple(types),
+                ),
+                0,
+            )
+        },
+
         // negative & positive
         EO::Neg => {
             // wrap the sub-expr that this negates
-            let (expr, idx) = wrap_expr(&asa[1..], _symbol_table)?;
+            let (expr, idx) = wrap_expr(&asa[1..], _type_table)?;
 
             // make sure it's a number, otherwise throw error
             if expr.1 != Type::Number {
@@ -75,7 +110,7 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], _symbol_table: &TypeTable) -> Result<(T
         },
         EO::Pos => {
             // wrap the sub-expr that this does nothing to
-            let (expr, idx) = wrap_expr(&asa[1..], _symbol_table)?;
+            let (expr, idx) = wrap_expr(&asa[1..], _type_table)?;
 
             // make sure it's a number, otherwise throw error
             if expr.1 != Type::Number {
@@ -104,9 +139,9 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], _symbol_table: &TypeTable) -> Result<(T
         // arithmatic / maths
         EO::Add => {
             // wrap the left-hand side of this operation
-            let (lhs, idx) = wrap_expr(&asa[1..], _symbol_table)?;
+            let (lhs, idx) = wrap_expr(&asa[1..], _type_table)?;
             // wrap the rigth-hand side of this operation
-            let (rhs, idx1) = wrap_expr(&asa[idx+2..], _symbol_table)?;
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], _type_table)?;
 
             // make sure lhs is of type number, otherwise throw error
             if lhs.1 != Type::Number {
@@ -143,9 +178,9 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], _symbol_table: &TypeTable) -> Result<(T
         },
         EO::Sub => {
             // wrap the left-hand side of this operation
-            let (lhs, idx) = wrap_expr(&asa[1..], _symbol_table)?;
+            let (lhs, idx) = wrap_expr(&asa[1..], _type_table)?;
             // wrap the rigth-hand side of this operation
-            let (rhs, idx1) = wrap_expr(&asa[idx+2..], _symbol_table)?;
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], _type_table)?;
 
             // make sure lhs is of type number, otherwise throw error
             if lhs.1 != Type::Number {
@@ -182,9 +217,9 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], _symbol_table: &TypeTable) -> Result<(T
         },
         EO::Mul => {
             // wrap the left-hand side of this operation
-            let (lhs, idx) = wrap_expr(&asa[1..], _symbol_table)?;
+            let (lhs, idx) = wrap_expr(&asa[1..], _type_table)?;
             // wrap the rigth-hand side of this operation
-            let (rhs, idx1) = wrap_expr(&asa[idx+2..], _symbol_table)?;
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], _type_table)?;
 
             // make sure lhs is of type number, otherwise throw error
             if lhs.1 != Type::Number {
@@ -221,9 +256,9 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], _symbol_table: &TypeTable) -> Result<(T
         },
         EO::Div => {
             // wrap the left-hand side of this operation
-            let (lhs, idx) = wrap_expr(&asa[1..], _symbol_table)?;
+            let (lhs, idx) = wrap_expr(&asa[1..], _type_table)?;
             // wrap the rigth-hand side of this operation
-            let (rhs, idx1) = wrap_expr(&asa[idx+2..], _symbol_table)?;
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], _type_table)?;
 
             // make sure lhs is of type number, otherwise throw error
             if lhs.1 != Type::Number {
@@ -262,9 +297,9 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], _symbol_table: &TypeTable) -> Result<(T
         // A change of pace where only strings are allowed instead of numbers
         EO::Concat => {
             // wrap the left-hand side of this operation
-            let (lhs, idx) = wrap_expr(&asa[1..], _symbol_table)?;
+            let (lhs, idx) = wrap_expr(&asa[1..], _type_table)?;
             // wrap the rigth-hand side of this operation
-            let (rhs, idx1) = wrap_expr(&asa[idx+2..], _symbol_table)?;
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], _type_table)?;
 
             // make sure lhs is of type string, otherwise throw error
             if lhs.1 != Type::String {

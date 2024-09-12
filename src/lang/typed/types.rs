@@ -1,9 +1,12 @@
 use std::fmt::Display;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Type {
     Number,
     String,
+    Nill,
+
+    Tuple(Vec<Type>),
 
     Custom {
         ident: String,
@@ -14,8 +17,10 @@ pub enum Type {
 impl Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", match self {
-            Type::Number => "num",
-            Type::String => "str",
+            Type::Number => "num".to_string(),
+            Type::Nill => "nil".to_string(),
+            Type::String => "str".to_string(),
+            Type::Tuple(types) => format!("tuple({})", types.into_iter().map(|t| t.to_string()).collect::<Vec<_>>().join(", ")), // may not be the most efficient
             Type::Custom { .. } => todo!(),
         })
     }
