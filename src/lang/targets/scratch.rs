@@ -31,6 +31,20 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>) -> Expr {
         E::String(str) => Expr::String(str),
         E::Nil => Expr::String(NIL.to_string()),
 
+        // blocks
+        E::Block(block) => {
+            // append all of the block's statements
+            for ((stmt, _), _) in block.stmts {
+                let _ = texpr(stmt, stmts);
+            }
+
+            // return tail statement
+            match block.tail {
+                Some(((tail, _), _)) => texpr(tail, stmts),
+                None => Expr::String("<nil>".to_string()),
+            }
+        },
+
         // builtin-function calls
         E::BuiltinFnCall(call) => {
             use crate::lang::typed::builtin::TBuiltinFnCall as B;

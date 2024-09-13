@@ -30,5 +30,8 @@ main {
     println!();
 
     println!("what is your name?");
-    println!("hi " <> input!("your name") <> "!");
+    println!("hi " <> {
+        println!("log: getting name...");
+        input!("what is your name?")
+    } <> "!");
 }
