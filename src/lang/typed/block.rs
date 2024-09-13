@@ -1,6 +1,7 @@
 use crate::lang::{error::typed::Error, parser::block::Block, typed::{expr, types::Type}, Spanned};
 use super::{expr::TExpr, symbol_table::TypeTable, types::Typed};
 
+/// A tree representation of a block
 #[derive(Debug)]
 pub struct TBlock {
     pub stmts: Vec<Typed<Spanned<TExpr>>>,

@@ -2,17 +2,16 @@
 
 use ketchup::error::KError;
 use logos::SpannedIter;
-use crate::lang::{error::parser::Error, parser::block::parse_block, token::Token};
+use crate::lang::{error::parser::Error, parser::block::parse_block, token::Token, Spanned};
 use super::block::Block;
 
 #[derive(Debug, Clone)]
 pub enum Root {
-    None,
     Main(Block),
 }
 
 /// Parses the roots of the project (stuff that will never be placed in a within any block or scope)
-pub fn parse_root(tokens: &mut SpannedIter<'_, Token>) -> Result<Vec<Root>, Vec<KError<Error>>> {
+pub fn parse_root(tokens: &mut SpannedIter<'_, Token>) -> Result<Vec<Spanned<Root>>, Vec<KError<Error>>> {
     let mut roots = Vec::new();
     
     // parse every root in the project
@@ -20,7 +19,13 @@ pub fn parse_root(tokens: &mut SpannedIter<'_, Token>) -> Result<Vec<Root>, Vec<
         match token {
             Err(err) => return Err(vec![KError::Other(span, err)]),
 
-            Ok(Token::Main) => roots.push(Root::Main(parse_main(tokens)?)),
+            Ok(Token::Main) => {
+                let (main, span) = parse_main(tokens)?;
+                roots.push((
+                    Root::Main(main),
+                    span,
+                ))
+            },
             
             _ => return Err(vec![KError::Other(span, Error::ExpectedRoot)]),
         }
@@ -30,7 +35,7 @@ pub fn parse_root(tokens: &mut SpannedIter<'_, Token>) -> Result<Vec<Root>, Vec<
 }
 
 /// Parses the main body of the program (assuming the main keyword was already consumed)
-pub fn parse_main(tokens: &mut SpannedIter<'_, Token>) -> Result<Block, Vec<KError<Error>>> {
+pub fn parse_main(tokens: &mut SpannedIter<'_, Token>) -> Result<Spanned<Block>, Vec<KError<Error>>> {
     let start_span = tokens.span();
     
     // ensure that there is a `LBrace`
@@ -39,6 +44,6 @@ pub fn parse_main(tokens: &mut SpannedIter<'_, Token>) -> Result<Block, Vec<KErr
         _ => return Err(vec![KError::Other(tokens.span(), Error::ExpectedBlockForMain { ctx_span: start_span })]),
     }
     
-    let (block, _) = parse_block(tokens)?; // parse body
+    let block = parse_block(tokens)?; // parse body
     Ok(block)
 }

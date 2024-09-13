@@ -71,7 +71,19 @@ pub enum Error {
 
         /// The span of the argument
         arg_span: Span,
-    }
+    },
+
+    /// Occurs when there are multiple main procedures that are defined in the same project
+    MultipleMain {
+        /// The span of the first main block
+        first_span: Span,
+        
+        /// The span of the additional main block
+        additional_span: Span,
+    },
+
+    /// Occurs when there is no main procedure defined in the project
+    NoMain,
 }
 
 impl Reportable for Error {
@@ -85,6 +97,21 @@ impl Reportable for Error {
             E::ConcatNonString { oper_span, value_span, value_type } => ("cannot concatinate non-string types", oper_span, format!("cannot concat an expr of type `{value_type}`"), value_span, format!("expected an expr of type `str`, instead found an expr of type `{value_type}`")),
             E::BuiltinManyArgs { call_span, max, arg_span } => ("unexpected builtin-function argument (too many args)", arg_span, "unexpected argument".to_string(), call_span, format!("builtin-func only expected {max:?} args")),
             E::BuiltinWrongType { call_span, expected, arg_type, arg_span } => ("builtin function's argument is of an incorrect type", arg_span, format!("expected an expr of type `{expected}`, instead found an expr of type `{arg_type}`",), call_span, "occured in this builtin-func call".to_string()),
+            E::MultipleMain { first_span, additional_span } => ("multiple main procedure definitions are not allowed", additional_span, "unexpected second main procedure definition".to_string(), first_span, "first main procedure defined here".to_string()),
+
+            E::NoMain => {
+                return report
+                    .with_message("no main procedure found")
+                    .with_label(
+                        Label::new((src_id, 0..0))
+                            .with_message("expected a main procedure definition")
+                        .with_color(Color::Red),
+                    )
+                    .with_help("you could try defining a main procedure like so `main { ... }`")
+                    .finish()
+                    .eprint((src_id, Source::from(src)))
+                    .unwrap();
+            },
 
             E::BuiltinNotFound { ident_span, ident, call_span } => {
                 return report

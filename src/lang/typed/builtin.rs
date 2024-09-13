@@ -2,6 +2,7 @@ use ketchup::Span;
 use crate::lang::{error::typed::Error, parser::expr::Expr, typed::{expr::wrap_expr, symbol_table::TypeTable, types::Type}, Spanned};
 use super::{expr::TExpr, types::Typed};
 
+/// A tree representation of a builtin-function call
 #[derive(Debug)]
 pub enum TBuiltinFnCall {
     PrintLn(Option<Typed<Spanned<TExpr>>>),

@@ -1,6 +1,5 @@
-use std::collections::HashMap;
 use logos::Logos;
-use scrapile::{lang::{error::Reportable, parser, token::Token, typed::{self, symbol_table::TypeTable}}, scratch::{add_console, Expr, Procedure, Statement}};
+use scrapile::{lang::{error::Reportable, parser, token::Token, typed}, scratch::{add_console, Expr, Procedure, Statement}};
 
 fn test_scratch() {
     let json = scrapile::scratch::assemble(
@@ -71,15 +70,19 @@ fn test_lang() {
         Err(err) => throw_lang_error(src, &err),
     };
 
-    // let src = r##"(--20 + 2) * ((4)) / ---2 - 6.0f <> "not allowed" <> ("a", 1, "tuple")"##;
-    let src = r##"1 + { println!("hello, world"); 12 } / 3"##;
+    let src = r##"
+        main {
+            println!("hello, world!");
+            1 + { println!("an example of a block"); 12 } / 3;
+        }
+    "##;
     let mut tokens = Token::lexer(src).spanned();
-    let (asa, _) = match parser::expr::parse_expr(tokens.next(), &mut tokens) {
+    let roots = match parser::root::parse_root(&mut tokens) {
         Ok(ok) => ok,
         Err(err) => throw_lang_error(src, &err),
     };
-    println!("asa: {asa:?}\n");
-    let typed = match typed::expr::wrap_expr(&asa.asa, &TypeTable(HashMap::new())) {
+    println!("roots: {roots:?}\n");
+    let typed = match typed::root::wrap_root(&roots) {
         Ok(ok) => ok,
         Err(err) => throw_lang_error(src, &[err]),
     };
