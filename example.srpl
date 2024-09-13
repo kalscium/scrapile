@@ -1,0 +1,20 @@
+main {
+    /*
+        Multi-line
+        Comments
+
+        stuff without `println!` at the start get filtered out and don't get included in the scratch binary
+    */
+
+    println!("hello, world!");
+    // some comments
+    println!("THIS IS SOOO COOOL!!!!!!!");
+    12;
+    # some different kinds of comments
+    "string";
+    println!("YOOOOOOOOOOOOOO");
+
+	1 + 2 * 3 / 4;
+	
+    "ignored"
+}

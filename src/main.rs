@@ -1,3 +1,5 @@
+use std::fs;
+
 use logos::Logos;
 use scrapile::{lang::{error::Reportable, parser, targets, token::Token, typed}, scratch::{add_console, Assembly, Expr, Procedure, Statement}};
 
@@ -36,7 +38,7 @@ fn test_scratch() {
     scrapile::scratch::write_to_zip("test.sb3", json).unwrap();
 }
 
-fn throw_lang_error<T>(src: &str, errors: &[impl Reportable]) -> T {
+fn throw_lang_error<T>(src: &str, src_id: &str, errors: &[impl Reportable]) -> T {
     for error in errors {
         error.report("<testing>", src);
     }
@@ -45,59 +47,16 @@ fn throw_lang_error<T>(src: &str, errors: &[impl Reportable]) -> T {
 }
 
 fn test_lang() {
-    // let src = r##"
-    //     /*
-    //         Here is a demonstration of a
-    //         multi-line comment
-    //     */
-
-    //     /// The main procedure of this program
-    //     main {
-    //         # demonstration of an example expression
-    //         println!(1 + 2 * num1 == ((4 + num2.val)) * 6 / (1, 2, "hi",) && maths.powf(1.2f, 2.6f) || version!);
-    //         println!("hello, " <> "world!" + nice.say("hello") / person.(nice).file);
-
-    //         // a nested block
-    //         {
-    //             println!({1 + 2; (3 * 4, "cool",)});
-    //         }
-    //     }
-    // "##;
-
-    // let mut tokens = Token::lexer(&src).spanned();
-    // let parsed = match parser::root::parse_root(&mut tokens) {
-    //     Ok(ok) => ok,
-    //     Err(err) => throw_lang_error(src, &err),
-    // };
-
-    let src = r##"
-        main {
-            /*
-                Multi-line
-                Comments
-
-                stuff without `println!` at the start get filtered out and don't get included in the scratch binary
-            */
-        
-            println!("hello, world!");
-            // some comments
-            println!("THIS IS SOOO COOOL!!!!!!!");
-            12;
-            # some different kinds of comments
-            "string";
-            println!("YOOOOOOOOOOOOOO");
-            "ignored"
-        }
-    "##;
-    let mut tokens = Token::lexer(src).spanned();
+    let src = fs::read_to_string("example.srpl").unwrap();
+    let mut tokens = Token::lexer(&src).spanned();
     let roots = match parser::root::parse_root(&mut tokens) {
         Ok(ok) => ok,
-        Err(err) => throw_lang_error(src, &err),
+        Err(err) => throw_lang_error(&src, "example.srpl", &err),
     };
     println!("roots: {roots:?}\n");
     let project = match typed::root::wrap_root(&roots) {
         Ok(ok) => ok,
-        Err(err) => throw_lang_error(src, &[err]),
+        Err(err) => throw_lang_error(&src, "example.srpl", &[err]),
     };
     println!("project: {project:?}\n");
     let assembly = targets::scratch::translate(project);

@@ -46,6 +46,40 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>) -> Expr {
             Expr::String(NIL.to_string())
         },
 
+        // maths
+        E::Add(lhs, rhs) => {
+            let (((lhs, _), _), ((rhs, _), _)) = (*lhs, *rhs);
+
+            let lhs = texpr(lhs, stmts);
+            let rhs = texpr(rhs, stmts);
+
+            Expr::Add(Box::new(lhs), Box::new(rhs))
+        },
+        E::Sub(lhs, rhs) => {
+            let (((lhs, _), _), ((rhs, _), _)) = (*lhs, *rhs);
+
+            let lhs = texpr(lhs, stmts);
+            let rhs = texpr(rhs, stmts);
+
+            Expr::Sub(Box::new(lhs), Box::new(rhs))
+        },
+        E::Mul(lhs, rhs) => {
+            let (((lhs, _), _), ((rhs, _), _)) = (*lhs, *rhs);
+
+            let lhs = texpr(lhs, stmts);
+            let rhs = texpr(rhs, stmts);
+
+            Expr::Mul(Box::new(lhs), Box::new(rhs))
+        },
+        E::Div(lhs, rhs) => {
+            let (((lhs, _), _), ((rhs, _), _)) = (*lhs, *rhs);
+
+            let lhs = texpr(lhs, stmts);
+            let rhs = texpr(rhs, stmts);
+
+            Expr::Div(Box::new(lhs), Box::new(rhs))
+        },
+
         _ => todo!(),
     }
 }
