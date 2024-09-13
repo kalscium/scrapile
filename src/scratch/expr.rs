@@ -65,6 +65,75 @@ pub(super) fn parse_expr(expr: Expr, expr_blocks: &mut Vec<JsonValue>) -> JsonVa
 
             expr_idx_to_id(expr_blocks.len()-1).into()
         },
+        E::Sub(lhs, rhs) => {
+            let json = object! {
+                opcode: "operator_subtract",
+                next: null,
+                parent: null,
+                inputs: {
+                    NUM1: [
+                        1,
+                        parse_expr((*lhs).clone(), expr_blocks),
+                    ],
+                    NUM2: [
+                        1,
+                        parse_expr((*rhs).clone(), expr_blocks),
+                    ],
+                },
+                fields: {},
+                shadow: false,
+                topLevel: false,
+            };
+            expr_blocks.push(json);
+
+            expr_idx_to_id(expr_blocks.len()-1).into()
+        },
+        E::Mul(lhs, rhs) => {
+            let json = object! {
+                opcode: "operator_multiply",
+                next: null,
+                parent: null,
+                inputs: {
+                    NUM1: [
+                        1,
+                        parse_expr((*lhs).clone(), expr_blocks),
+                    ],
+                    NUM2: [
+                        1,
+                        parse_expr((*rhs).clone(), expr_blocks),
+                    ],
+                },
+                fields: {},
+                shadow: false,
+                topLevel: false,
+            };
+            expr_blocks.push(json);
+
+            expr_idx_to_id(expr_blocks.len()-1).into()
+        },
+        E::Div(lhs, rhs) => {
+            let json = object! {
+                opcode: "operator_divide",
+                next: null,
+                parent: null,
+                inputs: {
+                    NUM1: [
+                        1,
+                        parse_expr((*lhs).clone(), expr_blocks),
+                    ],
+                    NUM2: [
+                        1,
+                        parse_expr((*rhs).clone(), expr_blocks),
+                    ],
+                },
+                fields: {},
+                shadow: false,
+                topLevel: false,
+            };
+            expr_blocks.push(json);
+
+            expr_idx_to_id(expr_blocks.len()-1).into()
+        },
 
         // variables and lists
         E::Variable { ident } => array![ 12, ident, "" ],
