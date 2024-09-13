@@ -34,16 +34,21 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>) -> Expr {
         // builtin-function calls
         E::BuiltinFnCall(call) => {
             use crate::lang::typed::builtin::TBuiltinFnCall as B;
-            let stmt = match *call {
-                // convert the println builtin to it's scratch counterpart
-                B::PrintLn(args) => match args {
-                    Some(((expr, _), _)) => Statement::PushList { ident: "console".to_string(), value: texpr(expr, stmts) },
-                    None => Statement::PushList { ident: "console".to_string(), value: Expr::String(String::new()) },
-                },
-            };
+            match *call {
+                // convert the `as_str` builtin to it's scratch counterpart
+                B::AsString((expr, _)) => texpr(expr, stmts),
+                
+                // convert the `println` builtin to it's scratch counterpart
+                B::PrintLn(args) => {
+                    let stmt = match args {
+                        Some((expr, _)) => Statement::PushList { ident: "console".to_string(), value: texpr(expr, stmts) },
+                        None => Statement::PushList { ident: "console".to_string(), value: Expr::String(String::new()) },
+                    };
 
-            stmts.push(stmt);
-            Expr::String(NIL.to_string())
+                    stmts.push(stmt);
+                    Expr::String(NIL.to_string())
+                },
+            }
         },
 
         // maths

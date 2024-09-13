@@ -40,7 +40,7 @@ fn test_scratch() {
 
 fn throw_lang_error<T>(src: &str, src_id: &str, errors: &[impl Reportable]) -> T {
     for error in errors {
-        error.report("<testing>", src);
+        error.report(src_id, src);
     }
 
     panic!("an error occured");

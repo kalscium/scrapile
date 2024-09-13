@@ -14,7 +14,7 @@ main {
     "string";
     println!("YOOOOOOOOOOOOOO");
 
-	1 + 2 * 3 / 4;
+	println!(as_str!(1 + 2 * 3 / 4));
 	
     "ignored"
 }

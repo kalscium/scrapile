@@ -58,6 +58,15 @@ pub enum Error {
         arg_span: Span,
     },
 
+    /// Occurs when you try to run a builtin function with too little arguments
+    BuiltinLittleArgs {
+        /// The span of the builtin-function call
+        call_span: Span,
+
+        /// The min arguments a builtin-fn-call can have
+        min: std::ops::Range<usize>,
+    },
+
     /// Occurs when there is an incorrectly typed argument o a builtin function
     BuiltinWrongType {
         /// The span of the builtin-function 
@@ -96,6 +105,7 @@ impl Reportable for Error {
             E::ArithmeticNonNumber { oper_span, oper_type, value_span, value_type } => ("cannot perform mathmatical operations on non-number types", oper_span, format!("cannot perform an {oper_type} operation an expr of type `{value_type}`"), value_span, format!("expected an expr of type `num`, instead found an expr of type `{value_type}`")),
             E::ConcatNonString { oper_span, value_span, value_type } => ("cannot concatinate non-string types", oper_span, format!("cannot concat an expr of type `{value_type}`"), value_span, format!("expected an expr of type `str`, instead found an expr of type `{value_type}`")),
             E::BuiltinManyArgs { call_span, max, arg_span } => ("unexpected builtin-function argument (too many args)", arg_span, "unexpected argument".to_string(), call_span, format!("builtin-func only expected {max:?} args")),
+            E::BuiltinLittleArgs { call_span, min } => ("expected a builtin-function argument (too little args)", &(call_span.end-1..call_span.end), "expected an argument".to_string(), call_span, format!("builtin-func expected {min:?} args")),
             E::BuiltinWrongType { call_span, expected, arg_type, arg_span } => ("builtin function's argument is of an incorrect type", arg_span, format!("expected an expr of type `{expected}`, instead found an expr of type `{arg_type}`",), call_span, "occured in this builtin-func call".to_string()),
             E::MultipleMain { first_span, additional_span } => ("multiple main procedure definitions are not allowed", additional_span, "unexpected second main procedure definition".to_string(), first_span, "first main procedure defined here".to_string()),
 

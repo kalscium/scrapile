@@ -5,13 +5,15 @@ use super::{expr::TExpr, types::Typed};
 /// A tree representation of a builtin-function call
 #[derive(Debug)]
 pub enum TBuiltinFnCall {
-    PrintLn(Option<Typed<Spanned<TExpr>>>),
+    PrintLn(Option<Spanned<TExpr>>),
+    AsString(Spanned<TExpr>),
 }
 
 /// Add type annotations to builtin-function calls
 pub fn wrap_builtin(ident: &str, ident_span: Span, span: Span, args: &[Expr], _type_table: &TypeTable) -> Result<Typed<TBuiltinFnCall>, Error> {
     match ident {
         "println" => builtin_println(span, args, _type_table),
+        "as_str" => builtin_as_str(span, args, _type_table),
 
         // if the builtin function is not found, then return error
         _ => return Err(Error::BuiltinNotFound {
@@ -22,15 +24,42 @@ pub fn wrap_builtin(ident: &str, ident_span: Span, span: Span, args: &[Expr], _t
     }
 }
 
+/// Add type annotations to `as_str` builtin-function calls
+fn builtin_as_str(span: Span, args: &[Expr], type_table: &TypeTable) -> Result<Typed<TBuiltinFnCall>, Error> {
+    // make sure there's at least one argument
+    if args.len() < 1 {
+        return Err(Error::BuiltinLittleArgs {
+            call_span: span,
+            min: 1..2,
+        });
+    }
+
+    // make sure there's only one argument
+    if args.len() > 1 {
+        return Err(Error::BuiltinManyArgs {
+            call_span: span,
+            max: 0..2,
+            arg_span: args[1].span.clone(),
+        });
+    }
+
+    // evaulate the argument and return it as a string
+    let ((arg, _), _) = wrap_expr(&args[0].asa, type_table)?;
+    Ok((
+        TBuiltinFnCall::AsString(arg),
+        Type::String,
+    ))
+}
+
 /// Add type annotations to `println` builtin-function calls
-fn builtin_println(span: Span, args: &[Expr], _type_table: &TypeTable) -> Result<Typed<TBuiltinFnCall>, Error> {
+fn builtin_println(span: Span, args: &[Expr], type_table: &TypeTable) -> Result<Typed<TBuiltinFnCall>, Error> {
     // make sure there's only one or no arguments, otherwise, throw error
     if args.len() > 1 {
         return Err(Error::BuiltinManyArgs {
             call_span: span,
             max: 0..2,
             arg_span: args[1].span.clone(),
-        })
+        });
     }
 
     // if there are no arugments, return early
@@ -42,7 +71,7 @@ fn builtin_println(span: Span, args: &[Expr], _type_table: &TypeTable) -> Result
     }
     
     // evaluate the first and *only* argument and make sure it's a string, otherwise throw error
-    let (arg, _) = wrap_expr(&args[0].asa, _type_table)?;
+    let (arg, _) = wrap_expr(&args[0].asa, type_table)?;
     if arg.1 != Type::String {
         return Err(
             Error::BuiltinWrongType {
@@ -56,7 +85,7 @@ fn builtin_println(span: Span, args: &[Expr], _type_table: &TypeTable) -> Result
 
     // return println call
     Ok((
-        TBuiltinFnCall::PrintLn(Some(arg)),
+        TBuiltinFnCall::PrintLn(Some(arg.0)),
         Type::Nil,
     ))
 }
