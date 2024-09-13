@@ -72,7 +72,7 @@ fn test_lang() {
     };
 
     // let src = r##"(--20 + 2) * ((4)) / ---2 - 6.0f <> "not allowed" <> ("a", 1, "tuple")"##;
-    let src = r##"1 + println!("hello, world",) / 3"##;
+    let src = r##"1 + { println!("hello, world"); 12 } / 3"##;
     let mut tokens = Token::lexer(src).spanned();
     let (asa, _) = match parser::expr::parse_expr(tokens.next(), &mut tokens) {
         Ok(ok) => ok,

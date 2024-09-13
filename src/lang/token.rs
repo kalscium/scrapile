@@ -17,7 +17,7 @@ pub enum Token {
     String(String),
     #[regex(r"true|false", |lex| lex.slice() == "true")]
     Bool(bool),
-    #[token("nill")]
+    #[token("nil")]
     Nil,
 
     // Symbols
