@@ -1,6 +1,6 @@
 use ketchup::node::Node;
-use crate::lang::{error::typed::Error, parser::{block::Block, expr::ExprOper}, typed::types::Type, Spanned};
-use super::{symbol_table::TypeTable, types::Typed};
+use crate::lang::{error::typed::Error, parser::{block::Block, expr::ExprOper}, typed::{builtin, types::Type}, Spanned};
+use super::{builtin::TBuiltinFnCall, symbol_table::TypeTable, types::Typed};
 
 /// A tree version of expr for type annotation
 #[derive(Debug)]
@@ -30,7 +30,7 @@ pub enum TExpr {
 
     Tuple(Vec<Typed<Spanned<TExpr>>>),
     Call(String, Vec<Typed<Spanned<TExpr>>>),
-    BuiltinFnCall(String, Vec<Vec<Typed<Spanned<TExpr>>>>),
+    BuiltinFnCall(Box<TBuiltinFnCall>),
     Block(Typed<Spanned<Block>>), }
 
 /// Wraps an expr with types and also returns it's current location in the asa
@@ -44,7 +44,7 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], _type_table: &TypeTable) -> Result<(Typ
         EO::Bool(bool) => (((TExpr::Bool(*bool), asa[0].info.span.clone()), Type::Bool), 0),
         EO::Nil => (((TExpr::Nil, asa[0].info.span.clone()), Type::Nil), 0),
 
-        // tuples
+        // tuples definitions
         EO::Tuple(exprs) => {
             let mut types = Vec::new();
             let mut typed_exprs = Vec::new();
@@ -74,6 +74,21 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], _type_table: &TypeTable) -> Result<(Typ
                         asa[0].info.span.clone(),
                     ),
                     Type::Tuple(types),
+                ),
+                0,
+            )
+        },
+
+        // builtin-function calls
+        EO::BuiltinFnCall { ident, ident_span, args } => {
+            let (call, ttype) = builtin::wrap_builtin(ident, ident_span.clone(), asa[0].info.span.clone(), &args)?;
+            (
+                (
+                    (
+                        TExpr::BuiltinFnCall(Box::new(call)),
+                        asa[0].info.span.clone(),
+                    ),
+                    ttype,
                 ),
                 0,
             )

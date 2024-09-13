@@ -11,7 +11,7 @@ use crate::lang::error::parser::Error;
 pub enum Token {
     // Literals
     #[regex(r"[0-9]+", |lex| lex.slice().parse::<f64>().unwrap())]
-    #[regex(r"[0-9]+\.[0-9]+f", |lex| lex.slice().parse::<f64>().unwrap())]
+    #[regex(r"[0-9]+\.[0-9]+f", |lex| lex.slice()[1..lex.slice().len()-1].parse::<f64>().unwrap())]
     Number(f64),
     #[regex(r#""([^"\\]|\\["\\bnfrt]|u[a-fA-F0-9]{4})*""#, |lex| lex.slice()[1..lex.slice().len()-1].to_owned())]
     String(String),

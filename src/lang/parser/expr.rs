@@ -39,7 +39,11 @@ pub enum ExprOper {
 
     Tuple(Vec<Expr>),
     Call(String, Vec<Expr>),
-    BuiltinFnCall(String, Vec<Expr>),
+    BuiltinFnCall {
+        ident: String,
+        ident_span: Span,
+        args: Vec<Expr>,
+    },
     Block(Block),
 }
 
@@ -121,7 +125,7 @@ fn parse_block(tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<E
     }, tokens.next())))
 }
 
-fn parse_builtin_func_call(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<ExprOper>, Option<Spanned<Result<Token, Error>>>)>, Vec<KError<Error>>> {
+fn parse_builtin_func_call(ident: String, ident_span: Span, tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<ExprOper>, Option<Spanned<Result<Token, Error>>>)>, Vec<KError<Error>>> {
     let start_span = tokens.span();
 
     // check for args for the builtin func call and also handle errors
@@ -129,7 +133,11 @@ fn parse_builtin_func_call(ident: String, tokens: &mut SpannedIter<'_, Token>) -
         Some((Ok(Token::LParen), _)) => {
             let (args, span) = super::tuple::parse_tuple(tokens)?;
             Ok(Some((OperInfo {
-                oper: ExprOper::BuiltinFnCall(ident, args),
+                oper: ExprOper::BuiltinFnCall {
+                    ident,
+                    ident_span,
+                    args,
+                },
                 span: start_span.start..span.end,
                 space: Space::None,
                 precedence: 0,
@@ -138,7 +146,11 @@ fn parse_builtin_func_call(ident: String, tokens: &mut SpannedIter<'_, Token>) -
         token => {
             // otherwise return a builtin function call without args
             Ok(Some((OperInfo {
-                oper: ExprOper::BuiltinFnCall(ident, Vec::new()),
+                oper: ExprOper::BuiltinFnCall {
+                    ident,
+                    ident_span,
+                    args: Vec::new(),
+                },
                 span: start_span,
                 space: Space::None,
                 precedence: 0,
@@ -161,7 +173,7 @@ fn oper_generator(token: Token, tokens: &mut SpannedIter<'_, Token>, double_spac
 
         // identifiers
         (T::Ident(ident), _) => return parse_call_or_ident(ident, tokens).map(|(info, next)| Some((info, next))),
-        (T::BuiltinFunc(ident), _) => return parse_builtin_func_call(ident, tokens),
+        (T::BuiltinFunc(ident), _) => return parse_builtin_func_call(ident, tokens.span(), tokens),
 
         // dot memeber access
         (T::Dot, _) => (1, Space::Double, E::DotAccess),
