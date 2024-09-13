@@ -14,6 +14,7 @@ use super::Condition;
 
     // operations
     Condition(Box<Condition>), // conditions can be converted to strings as an expr Add(Box<Expr>, Box<Expr>),
+    Add(Box<Expr>, Box<Expr>),
     Sub(Box<Expr>, Box<Expr>),
     Mul(Box<Expr>, Box<Expr>),
     Div(Box<Expr>, Box<Expr>),
@@ -39,6 +40,31 @@ pub(super) fn parse_expr(expr: Expr, expr_blocks: &mut Vec<JsonValue>) -> JsonVa
         E::PosInteger(num) => array![ 6, num ],
         E::Integer(num) => array![ 7, num ],
         E::String(num) => array![ 10, num ],
+
+        // maths operations
+        E::Add(lhs, rhs) => {
+            let json = object! {
+                opcode: "operator_add",
+                next: null,
+                parent: null,
+                inputs: {
+                    NUM1: [
+                        1,
+                        parse_expr((*lhs).clone(), expr_blocks),
+                    ],
+                    NUM2: [
+                        1,
+                        parse_expr((*rhs).clone(), expr_blocks),
+                    ],
+                },
+                fields: {},
+                shadow: false,
+                topLevel: false,
+            };
+            expr_blocks.push(json);
+
+            expr_idx_to_id(expr_blocks.len()-1).into()
+        },
 
         // variables and lists
         E::Variable { ident } => array![ 12, ident, "" ],

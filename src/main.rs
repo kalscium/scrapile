@@ -13,6 +13,8 @@ fn test_scratch() {
             Statement::PushList { ident: "console".to_string(), value: Expr::ListLength { ident: "mylist".to_string() } },
             Statement::PushList { ident: "console".to_string(), value: Expr::ListElement { ident: "mylist".to_string(), idx: Box::new(Expr::Integer(1)) } },
 
+            Statement::PushList { ident: "console".to_string(), value: Expr::Add(Box::new(Expr::String("1nice".to_string())), Box::new(Expr::String("6".to_string()))) },
+
             Statement::CallProcedure { ident: "procedure".to_string() },
             Statement::CallProcedure { ident: "again".to_string() },
         ],
@@ -87,6 +89,6 @@ fn test_lang() {
 }
 
 fn main() {
-    test_lang();
     test_scratch();
+    test_lang();
 }
