@@ -4,8 +4,9 @@ use crate::scratch::expr_idx_to_id;
 use super::Condition;
 
 /// An expression in scratch (returns a value)
-#[derive(Debug, Clone)] pub enum Expr {
-    // Atoms
+#[derive(Debug, Clone)]
+pub enum Expr {
+    // Literals
     Float(f64),
     PosFloat(f64),
     PosInteger(u32),
@@ -19,6 +20,9 @@ use super::Condition;
     Mul(Box<Expr>, Box<Expr>),
     Div(Box<Expr>, Box<Expr>),
     Concat(Box<Expr>, Box<Expr>),
+
+    // Asking
+    Answer,
 
     // list & variable operations
     Variable { ident: String },
@@ -64,8 +68,7 @@ pub(super) fn parse_expr(expr: Expr, expr_blocks: &mut Vec<JsonValue>) -> JsonVa
             };
             expr_blocks.push(json);
 
-            expr_idx_to_id(expr_blocks.len()-1).into()
-        },
+            expr_idx_to_id(expr_blocks.len()-1).into() },
 
         // maths operations
         E::Add(lhs, rhs) => {
@@ -152,6 +155,22 @@ pub(super) fn parse_expr(expr: Expr, expr_blocks: &mut Vec<JsonValue>) -> JsonVa
                         parse_expr((*rhs).clone(), expr_blocks),
                     ],
                 },
+                fields: {},
+                shadow: false,
+                topLevel: false,
+            };
+            expr_blocks.push(json);
+
+            expr_idx_to_id(expr_blocks.len()-1).into()
+        },
+
+        // asking
+        E::Answer => {
+            let json = object! {
+                opcode: "sensing_answer",
+                next: null,
+                parent: null,
+                inputs: {},
                 fields: {},
                 shadow: false,
                 topLevel: false,

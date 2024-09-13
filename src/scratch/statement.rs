@@ -16,6 +16,8 @@ pub enum Statement {
     CallProcedure {
         ident: String,
     },
+
+    Ask { prompt: Expr },
     
     SetVar {
         ident: String,
@@ -44,9 +46,7 @@ pub enum Statement {
     },
     ShowList { ident: String },
     HideList { ident: String },
-    ClearList {
-        ident: String,
-    },
+    ClearList { ident: String },
 }
 
 /// Parses a scratch statement and outupts the generated json
@@ -103,6 +103,18 @@ pub(super) fn parse_stmt(stmt: &Statement, expr_blocks: &mut Vec<JsonValue>) -> 
                         ""
                     ],
                 },
+            }
+        },
+        S::Ask { prompt } => {
+            object! {
+                opcode: "sensing_askandwait",
+                inputs: {
+                    QUESTION: [
+                        1,
+                        parse_expr(prompt.clone(), expr_blocks),
+                    ],
+                },
+                fields: {},
             }
         },
         _ => todo!(),

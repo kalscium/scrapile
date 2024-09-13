@@ -25,5 +25,10 @@ main {
     println!("this is dave");
     println!("dave compiles scrapile to scratch");
     println!("dave is very cool");
-    println!("dave is also " <> as_str!(6 + 4 * 4) <> " years old")
+    println!("dave is also " <> as_str!(6 + 4 * 4) <> " years old");
+
+    println!();
+
+    println!("what is your name?");
+    println!("hi " <> input!("your name") <> "!");
 }

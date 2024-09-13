@@ -37,6 +37,13 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>) -> Expr {
             match *call {
                 // convert the `as_str` builtin to it's scratch counterpart
                 B::AsString((expr, _)) => texpr(expr, stmts),
+
+                // convert the `input` builtin to it's scratch counterpart
+                B::Input((expr, _)) => {
+                    let prompt = texpr(expr, stmts);
+                    stmts.push(Statement::Ask { prompt });
+                    Expr::Answer
+                },
                 
                 // convert the `println` builtin to it's scratch counterpart
                 B::PrintLn(args) => {

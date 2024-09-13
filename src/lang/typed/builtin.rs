@@ -7,13 +7,15 @@ use super::{expr::TExpr, types::Typed};
 pub enum TBuiltinFnCall {
     PrintLn(Option<Spanned<TExpr>>),
     AsString(Spanned<TExpr>),
+    Input(Spanned<TExpr>),
 }
 
 /// Add type annotations to builtin-function calls
-pub fn wrap_builtin(ident: &str, ident_span: Span, span: Span, args: &[Expr], _type_table: &TypeTable) -> Result<Typed<TBuiltinFnCall>, Error> {
+pub fn wrap_builtin(ident: &str, ident_span: Span, span: Span, args: &[Expr], type_table: &TypeTable) -> Result<Typed<TBuiltinFnCall>, Error> {
     match ident {
-        "println" => builtin_println(span, args, _type_table),
-        "as_str" => builtin_as_str(span, args, _type_table),
+        "println" => builtin_println(span, args, type_table),
+        "as_str" => builtin_as_str(span, args, type_table),
+        "input" => builtin_input(span, args, type_table),
 
         // if the builtin function is not found, then return error
         _ => return Err(Error::BuiltinNotFound {
@@ -47,6 +49,33 @@ fn builtin_as_str(span: Span, args: &[Expr], type_table: &TypeTable) -> Result<T
     let ((arg, _), _) = wrap_expr(&args[0].asa, type_table)?;
     Ok((
         TBuiltinFnCall::AsString(arg),
+        Type::String,
+    ))
+}
+
+/// Add type annotations to `input` builtin-function calls
+fn builtin_input(span: Span, args: &[Expr], type_table: &TypeTable) -> Result<Typed<TBuiltinFnCall>, Error> {
+    // make sure there's at least one argument
+    if args.len() < 1 {
+        return Err(Error::BuiltinLittleArgs {
+            call_span: span,
+            min: 1..2,
+        });
+    }
+
+    // make sure there's only one argument
+    if args.len() > 1 {
+        return Err(Error::BuiltinManyArgs {
+            call_span: span,
+            max: 0..2,
+            arg_span: args[1].span.clone(),
+        });
+    }
+
+    // evaulate the argument and return the `input` call
+    let ((arg, _), _) = wrap_expr(&args[0].asa, type_table)?;
+    Ok((
+        TBuiltinFnCall::Input(arg),
         Type::String,
     ))
 }
