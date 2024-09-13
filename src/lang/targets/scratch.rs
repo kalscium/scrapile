@@ -2,7 +2,7 @@ use crate::{lang::typed::{expr::TExpr, root::Project}, scratch::{Assembly, Expr,
 
 /// Translates a project into scratch assembly
 pub fn translate(project: Project) -> Assembly {
-    let mut stmts = Vec::new();
+    let mut stmts = vec![Statement::ClearList { ident: "console".to_string() }]; // first statement is to clear the console
     
     // translate the main procedure's statements
     for stmt in project.main.0.stmts {
@@ -49,6 +49,16 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>) -> Expr {
                     Expr::String(NIL.to_string())
                 },
             }
+        },
+
+        // concat
+        E::Concat(lhs, rhs) => {
+            let (((lhs, _), _), ((rhs, _), _)) = (*lhs, *rhs);
+
+            let lhs = texpr(lhs, stmts);
+            let rhs = texpr(rhs, stmts);
+
+            Expr::Concat(Box::new(lhs), Box::new(rhs))
         },
 
         // maths

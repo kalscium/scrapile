@@ -44,6 +44,9 @@ pub enum Statement {
     },
     ShowList { ident: String },
     HideList { ident: String },
+    ClearList {
+        ident: String,
+    },
 }
 
 /// Parses a scratch statement and outupts the generated json
@@ -71,6 +74,18 @@ pub(super) fn parse_stmt(stmt: &Statement, expr_blocks: &mut Vec<JsonValue>) -> 
                 },
                 shadow: false,
                 topLevel: false,
+            }
+        },
+        S::ClearList { ident } => {
+            object! {
+                opcode: "data_deletealloflist",
+                inputs: {},
+                fields: {
+                    LIST: [
+                        **ident,
+                        ""
+                    ],
+                },
             }
         },
         S::SetVar { ident, value } => {

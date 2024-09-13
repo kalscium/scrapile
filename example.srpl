@@ -16,5 +16,14 @@ main {
 
 	println!(as_str!(1 + 2 * 3 / 4));
 	
-    "ignored"
+    "ignored";
+
+    ###############################
+    # Some more organised testing #
+    ###############################
+
+    println!("this is dave");
+    println!("dave compiles scrapile to scratch");
+    println!("dave is very cool");
+    println!("dave is also " <> as_str!(6 + 4 * 4) <> " years old")
 }

@@ -340,7 +340,7 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], _type_table: &TypeTable) -> Result<(Typ
                 });
             }
 
-            // make sure rhs is of type number, otherwise throw error
+            // make sure rhs is of type string, otherwise throw error
             if rhs.1 != Type::String {
                 return Err(Error::ConcatNonString {
                     oper_span: asa[0].info.span.clone(),
@@ -354,10 +354,10 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], _type_table: &TypeTable) -> Result<(Typ
             (
                 (
                     (
-                        TExpr::Div(Box::new(lhs), Box::new(rhs)), // value
+                        TExpr::Concat(Box::new(lhs), Box::new(rhs)), // value
                         span, // span
                     ),
-                    Type::Number, // type
+                    Type::String, // type
                 ),
                 idx1 + idx + 2, // the current idx (accounting for offsets)
             )

@@ -18,6 +18,7 @@ use super::Condition;
     Sub(Box<Expr>, Box<Expr>),
     Mul(Box<Expr>, Box<Expr>),
     Div(Box<Expr>, Box<Expr>),
+    Concat(Box<Expr>, Box<Expr>),
 
     // list & variable operations
     Variable { ident: String },
@@ -40,6 +41,31 @@ pub(super) fn parse_expr(expr: Expr, expr_blocks: &mut Vec<JsonValue>) -> JsonVa
         E::PosInteger(num) => array![ 6, num ],
         E::Integer(num) => array![ 7, num ],
         E::String(num) => array![ 10, num ],
+
+        // concat
+        E::Concat(lhs, rhs) => {
+            let json = object! {
+                opcode: "operator_join",
+                next: null,
+                parent: null,
+                inputs: {
+                    STRING1: [
+                        1,
+                        parse_expr((*lhs).clone(), expr_blocks),
+                    ],
+                    STRING2: [
+                        1,
+                        parse_expr((*rhs).clone(), expr_blocks),
+                    ],
+                },
+                fields: {},
+                shadow: false,
+                topLevel: false,
+            };
+            expr_blocks.push(json);
+
+            expr_idx_to_id(expr_blocks.len()-1).into()
+        },
 
         // maths operations
         E::Add(lhs, rhs) => {
