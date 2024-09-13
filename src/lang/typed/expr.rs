@@ -81,7 +81,7 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], _type_table: &TypeTable) -> Result<(Typ
 
         // builtin-function calls
         EO::BuiltinFnCall { ident, ident_span, args } => {
-            let (call, ttype) = builtin::wrap_builtin(ident, ident_span.clone(), asa[0].info.span.clone(), &args)?;
+            let (call, ttype) = builtin::wrap_builtin(ident, ident_span.clone(), asa[0].info.span.clone(), &args, _type_table)?;
             (
                 (
                     (
