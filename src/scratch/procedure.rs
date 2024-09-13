@@ -3,9 +3,11 @@ use crate::scratch::expr_idx_to_id;
 
 use super::{parse_stmt, Statement};
 
-pub struct Procedure<'a> {
+/// Represents a procedure in scratch
+#[derive(Debug)]
+pub struct Procedure {
     pub ident: String,
-    pub body: &'a [Statement],
+    pub body: Vec<Statement>,
 }
 
 /// Parses a procedure call and outputs the generated json

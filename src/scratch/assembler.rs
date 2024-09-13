@@ -11,17 +11,26 @@ fn stmt_idx_to_id(idx: usize) -> String {
     format!("stmt_idx: {idx}")
 }
 
+/// Scratch assembly, the closest thing to scratch blocks without being actual scratch blocks
+#[derive(Debug)]
+pub struct Assembly {
+    pub stmts: Vec<Statement>,
+    pub variables: Vec<String>,
+    pub lists: Vec<String>,
+    pub procedures: Vec<Procedure>,
+}
+
 /// The scratch equivelent of an 'assembler'; it takes in instructions that are very close to the scratch equivelant and generates the final `.sb3` project
 ///
 /// it also requires a list of all the variable and list ids used in the statements
-pub fn assemble(stmts: &[Statement], variables: &[String], lists: &[String], procedures: &[Procedure]) -> JsonValue {
+pub fn assemble(assembly: &Assembly) -> JsonValue {
     // parse statements
     let mut expr_blocks = Vec::new();
-    let stmt_blocks = stmts.iter()
+    let stmt_blocks = assembly.stmts.iter()
         .map(|stmt| parse_stmt(stmt, &mut expr_blocks))
         .collect::<Vec<_>>();
     // parse procedures
-    for procedure in procedures {
+    for procedure in assembly.procedures.iter() {
         parse_procedure(procedure, &mut expr_blocks);
     }
 
@@ -64,13 +73,13 @@ pub fn assemble(stmts: &[Statement], variables: &[String], lists: &[String], pro
     };
 
     // insert variable and list definitions
-    for var in variables {
+    for var in assembly.variables.iter() {
         json["targets"][0]["variables"][var] = array! [
             **var,
             ""
         ];
     }
-    for list in lists {
+    for list in assembly.lists.iter() {
         json["targets"][0]["lists"][list] = array! [
             **list,
             []
