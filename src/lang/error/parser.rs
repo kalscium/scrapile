@@ -15,6 +15,8 @@ pub enum Error {
     ExpectedExpr,
     /// Occurs when the parser expects a root token (like `main` or `fn`) but find an unexpected one instead
     ExpectedRoot,
+    /// Occurs when there is a type usage that was expected but not found
+    ExpectedType,
 
     /// Occurs when there is an unclosed parentheses
     UnclosedParentheses {
@@ -67,6 +69,7 @@ impl Reportable for KError<Error> {
                 E::ExpectedStmt => ("expected statement", span.clone(), "found this instead", span, "consider removing this or inserting a statement"), // assuming it's an error caused by `;;`
                 E::ExpectedExpr => ("expected an expression", span.clone(), "found this instead", span, "consider removing this or inserting an expression"),
                 E::ExpectedRoot => ("expected root token", span.clone(), "expected a root token like `main` or `fn ...`", span, "consider wrapping this in a `main { ... }` or function"),
+                E::ExpectedType => ("expected a type annotation", span.clone(), "expected a type annotation", span, "consider adding a type annotation here, like `str` or `num`"),
 
                 E::UnclosedParentheses { ctx_span } => ("unclosed parentheses", span, "expected `)`", ctx_span, "to complete this tuple"),
                 E::UnclosedBrace { ctx_span } => ("unclosed brace", span, "expected `}`", ctx_span, "to complete this block"),
