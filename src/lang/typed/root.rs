@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::lang::{error::typed::Error, parser::root::Root, Spanned};
-use super::{block::{self, TBlock}, symbol_table::TypeTable};
+use super::{block::{self, TBlock}, symbol_table::{TypeTable, VarTable}};
 
 /// A type annotated representation of the entire project with all the roots evaluated statically
 #[derive(Debug)]
@@ -23,7 +23,7 @@ pub fn wrap_root(roots: &[Spanned<Root>]) -> Result<Project, Error> {
         match root {
             // set the main block
             Root::Main(block) => {
-                let (block, _) = block::wrap_block(block.clone(), &type_table)?; // wrap main block in types
+                let (block, _) = block::wrap_block(block.clone(), &type_table, VarTable::new("$root".to_string()))?; // wrap main block in types
 
                 // try to set the main block, if there's already one, then throw an error
                 if let Some((_, first_span)) = main.replace((block, span.clone())) {
