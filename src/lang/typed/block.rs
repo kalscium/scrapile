@@ -1,35 +1,29 @@
-use crate::lang::{error::typed::Error, parser::{block::Block, stmt::Stmt}, typed::{expr, types::Type}, Spanned};
-use super::{expr::TExpr, symbol_table::TypeTable, types::Typed};
+use crate::lang::{error::typed::Error, parser::block::Block, typed::{stmt, types::Type}, Spanned};
+use super::{symbol_table::TypeTable, types::Typed, stmt::TStmt};
 
 /// A tree representation of a block
 #[derive(Debug)]
 pub struct TBlock {
-    pub stmts: Vec<Typed<Spanned<TExpr>>>,
-    pub tail: Option<Typed<Spanned<TExpr>>>,
+    pub stmts: Vec<Typed<Spanned<TStmt>>>,
+    pub tail: Option<Typed<Spanned<TStmt>>>,
 }
 
 /// Adds type annotations to a block
 pub fn wrap_block(block: Block, type_table: &TypeTable) -> Result<Typed<TBlock>, Error> {
     // iterate through the block's statements and add type annotations to all of them
     let mut stmts = Vec::new();
-    for (stmt, _) in block.stmts {
-        stmts.push(match &stmt {
-            Stmt::Expr(expr) => expr::wrap_expr(&expr.asa, type_table)?.0,
-            _ => todo!(),
-        });
+    for (stmt, span) in block.stmts {
+        let (stmt, stmt_type) = stmt::wrap_stmt(stmt, type_table)?;
+        stmts.push(((stmt, span), stmt_type));
     }
 
     // check the type of the tail, (if there is one)
     let (tail, tail_type) = match block.tail {
         None => (None, Type::Nil),
-        Some((stmt, _)) => {
-            let (stmt, _) = match &stmt {
-                Stmt::Expr(expr) => expr::wrap_expr(&expr.asa, type_table)?,
-            _ => todo!(),
-            };
-            let stmt_type = stmt.1.clone();
+        Some((stmt, span)) => {
+            let (stmt, stmt_type) = stmt::wrap_stmt(stmt, type_table)?;
 
-            (Some(stmt), stmt_type)
+            (Some(((stmt, span), stmt_type.clone())), stmt_type)
         },
     };
 

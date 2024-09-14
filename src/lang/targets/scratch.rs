@@ -1,4 +1,4 @@
-use crate::{lang::typed::{expr::TExpr, root::Project}, scratch::{Assembly, Expr, Statement}};
+use crate::{lang::typed::{expr::TExpr, root::Project, stmt::TStmt}, scratch::{Assembly, Expr, Statement}};
 
 /// Translates a project into scratch assembly
 pub fn translate(project: Project) -> Assembly {
@@ -6,10 +6,10 @@ pub fn translate(project: Project) -> Assembly {
     
     // translate the main procedure's statements
     for stmt in project.main.0.stmts {
-        let _ = texpr(stmt.0.0, &mut stmts);
+        tstmt(stmt.0.0, &mut stmts);
     }
     if let Some(stmt) = project.main.0.tail {
-        let _ = texpr(stmt.0.0, &mut stmts);
+        tstmt(stmt.0.0, &mut stmts);
     }
 
     Assembly {
@@ -20,9 +20,18 @@ pub fn translate(project: Project) -> Assembly {
     }
 }
 
+const NIL: &str = "<nil>";
+
+/// Translates a statement
+pub fn tstmt(stmt: TStmt, stmts: &mut Vec<Statement>) {
+    match stmt {
+        TStmt::Expr(expr) => texpr(expr, stmts),
+        _ => todo!(),
+    };
+}
+
 /// Translates an expr
 pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>) -> Expr {
-    const NIL: &str = "<nil>";
     
     use TExpr as E;
     match expr {
@@ -35,13 +44,13 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>) -> Expr {
         E::Block(block) => {
             // append all of the block's statements
             for ((stmt, _), _) in block.stmts {
-                let _ = texpr(stmt, stmts);
+                tstmt(stmt, stmts);
             }
 
             // return tail statement
             match block.tail {
-                Some(((tail, _), _)) => texpr(tail, stmts),
-                None => Expr::String("<nil>".to_string()),
+                Some(((TStmt::Expr(tail), _), _)) => texpr(tail, stmts),
+                _ => Expr::String("<nil>".to_string()),
             }
         },
 

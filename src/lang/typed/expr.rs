@@ -2,7 +2,7 @@ use ketchup::node::Node;
 use crate::lang::{error::typed::Error, parser::expr::ExprOper, typed::{block, builtin, types::Type}, Spanned};
 use super::{block::TBlock, builtin::TBuiltinFnCall, symbol_table::TypeTable, types::Typed};
 
-/// A tree version of expr for type annotation
+/// A tree version of an expr for type annotation
 #[derive(Debug)]
 pub enum TExpr {
     Number(f64),
