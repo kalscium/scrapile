@@ -3,7 +3,7 @@ use logos::SpannedIter;
 use crate::lang::{error::parser::Error, token::Token, Spanned};
 
 /// A user-defined type annotation
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Type {
     String,
     Number,

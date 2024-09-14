@@ -15,6 +15,7 @@ pub fn wrap_block(block: Block, type_table: &TypeTable) -> Result<Typed<TBlock>,
     for (stmt, _) in block.stmts {
         stmts.push(match &stmt {
             Stmt::Expr(expr) => expr::wrap_expr(&expr.asa, type_table)?.0,
+            _ => todo!(),
         });
     }
 
@@ -24,6 +25,7 @@ pub fn wrap_block(block: Block, type_table: &TypeTable) -> Result<Typed<TBlock>,
         Some((stmt, _)) => {
             let (stmt, _) = match &stmt {
                 Stmt::Expr(expr) => expr::wrap_expr(&expr.asa, type_table)?,
+            _ => todo!(),
             };
             let stmt_type = stmt.1.clone();
 

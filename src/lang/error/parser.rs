@@ -50,6 +50,28 @@ pub enum Error {
         /// The location of the start of the parentheses
         ctx_span: Span,
     },
+
+    /// Occurs when the `let` var declaration cannot find a `mut` or identifier
+    ExpectedMutOrIdent {
+        /// The location of the `let` var declaration
+        ctx_span: Span,
+    },
+    /// Occurs when the `let` var declaration cannot find a `:` or `=`
+    ExpectedColonOrEQ {
+        /// The location of the `let` var declaration
+        ctx_span: Span,
+    },
+    /// Occurs when the `let` var declaration cannot find a `=`
+    ExpectedEQ {
+        /// The location of the `let` var declaration
+        ctx_span: Span,
+    },
+
+    /// Occurs when something expects an identifier but cannot find one
+    ExpectedIdent {
+        /// The location of the declaration
+        ctx_span: Span,
+    },
 }
 
 impl Reportable for KError<Error> {
@@ -77,6 +99,12 @@ impl Reportable for KError<Error> {
                 E::ExpectedSemiOrRBrace { ctx_span } => ("expected semi-colon or right brace", span, "expected `;` or `}`", ctx_span, "to continue or complete this block"),
                 E::ExpectedCallLParen { ctx_span } => ("expected arguments for this function call", span, "expected arguments `(`", ctx_span, "this func call expected args" ),
                 E::ExpectedBlockForMain { ctx_span } => ("expected a body for the main procedure", span, "expected body `{`", ctx_span, "expected due to the `main` keyword"),
+
+                E::ExpectedMutOrIdent { ctx_span } => ("expected either a `mut` keyword or identifier in `let` statement", span, "found this instead", ctx_span, "in this let statement"),
+                E::ExpectedColonOrEQ { ctx_span } => ("expected either a `:` (for type annotations) or a `=` (for value definition) in let statement", span, "found this instead", ctx_span, "in this let statement"),
+                E::ExpectedEQ { ctx_span } => ("expected a `=` to define a value in let statement", span, "found this instead", ctx_span, "in this let statement"),
+
+                E::ExpectedIdent { ctx_span } => ("expected an identifier", span, "found this instead", ctx_span, "in this declaration"),
             },
         };
 
