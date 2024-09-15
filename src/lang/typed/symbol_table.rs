@@ -32,6 +32,10 @@ pub struct VarTableEntry {
 }
 
 impl VarTable {
+    // # Variable Identifier Naming Scheme
+    // ---
+    // $: a compiler generated name
+
     /// Creates a new emtpy var-table
     #[inline]
     pub fn new(prefix: String) -> Self {

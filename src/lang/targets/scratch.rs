@@ -97,7 +97,14 @@ pub fn texpr(expr: TExpr, variables: &mut Vec<String>, stmts: &mut Vec<Statement
             Expr::Concat(Box::new(lhs), Box::new(rhs))
         },
 
-        // maths
+        // maths single-space
+        E::Pos(expr) => texpr(expr.0.0, variables, stmts),
+        E::Neg(expr) => Expr::Mul(
+            Box::new(texpr(expr.0.0, variables, stmts)),
+            Box::new(Expr::Integer(-1)),
+        ),
+
+        // maths double-space
         E::Add(lhs, rhs) => {
             let (((lhs, _), _), ((rhs, _), _)) = (*lhs, *rhs);
 
