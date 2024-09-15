@@ -18,6 +18,7 @@ pub fn parse_type(first_tok: Option<Spanned<Result<Token, Error>>>, tokens: &mut
             "str" => Type::String,
             "num" => Type::Number,
             "bool" => Type::Bool,
+            "nil" => Type::Nil,
             
             // custom uesr-defined types
             _ => Type::Custom { ident },

@@ -36,7 +36,7 @@ pub fn wrap_stmt(stmt: Spanned<Stmt>, type_table: &TypeTable, var_table: &mut Va
             }
 
             // update variable table
-            var_table.table.insert(ident.clone(), VarTableEntry {
+            var_table.insert(ident.clone(), VarTableEntry {
                 var_type: value.1.clone(),
                 mutable,
                 span,
@@ -44,7 +44,7 @@ pub fn wrap_stmt(stmt: Spanned<Stmt>, type_table: &TypeTable, var_table: &mut Va
             
             // return completed variable declaration
             Ok((
-                TStmt::VarDeclare { ident: var_table.ident(&ident), value },
+                TStmt::VarDeclare { ident: var_table.get_ident(&ident), value },
                 Type::Nil,
             ))
         },

@@ -32,6 +32,10 @@ pub enum TExpr {
     Call(String, Vec<Typed<Spanned<TExpr>>>),
     BuiltinFnCall(Box<TBuiltinFnCall>),
     Block(Box<TBlock>),
+    VarGet {
+        ident: String,
+        var_type: Type,
+    },
 }
 
 /// Wraps an expr with types and also returns it's current location in the asa
@@ -360,6 +364,26 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
                     Type::String, // type
                 ),
                 idx1 + idx + 2, // the current idx (accounting for offsets)
+            )
+        },
+
+        // getting variables
+        EO::Ident(ident) => {
+            // try get the type of the variable from the var-table, otherwise throw error
+            let (ident, var_type) = match var_table.get(ident) {
+                Some((ident, entry)) => (ident, entry.var_type.clone()),
+                None => return Err(Error::VarNotFound { span: asa[0].info.span.clone() })
+            };
+
+            (
+                (
+                    (
+                        TExpr::VarGet { ident, var_type: var_type.clone() },
+                        asa[0].info.span.clone(),
+                    ),
+                    var_type,
+                ),
+                0,
             )
         },
 

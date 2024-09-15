@@ -3,35 +3,37 @@ main {
         Multi-line
         Comments
 
-        stuff without `println!` at the start get filtered out and don't get included in the scratch binary
+        Stuff that isn't printed to the screen or setting variables (expressions) are getting filtered out
     */
 
-    println!("hello, world!");
-    // some comments
-    println!("THIS IS SOOO COOOL!!!!!!!");
-    12;
-    # some different kinds of comments
-    "string";
-    println!("YOOOOOOOOOOOOOO");
+    // here is the classic hello world
+    println!("hello, world"); # identical syntax to rust, but a very different implementation
 
-	println!(as_str!(1 + 2 * 3 / 4));
-	
-    "ignored";
+    // now here is some maths *and also variables*
+    let maths: num = 1 + 2 / 3 * 96 - -5;
+    println!("here's the output of the maths: " <> as_str!(maths)); # string concatination
+    # casting to a string is alos demonstrated
 
-    ###############################
-    # Some more organised testing #
-    ###############################
+    // blocks are nice
+    let block_msg: str = {
+        let maths = 99 / (1 + 2);
 
-    println!("this is dave");
-    println!("dave compiles scrapile to scratch");
-    println!("dave is very cool");
-    println!("dave is also " <> as_str!(6 + 4 * 4) <> " years old");
+        let message = {
+            println!("here is a deeply nested block");
+            let message = "blocks are nice, here's some more maths: " <> as_str!(maths);
+            message
+        };
+        
+        message # return the message as the return value of the block
+    };
 
-    println!();
+    println!(block_msg); // print the block message
 
-    println!("what is your name?");
-    println!("hi " <> {
-        println!("log: getting name...");
-        input!("what is your name?")
-    } <> "!");
+    let nil_value: nil = ();
+
+    println!("here is a nil value cast to a string: " <> as_str!(nil_value));
+
+    # Now it's time to ask the user a question
+    let username = input!("What's your name?");
+    println!("hello, there " <> username <> "! nice to meet you!"); // greet the user
 }

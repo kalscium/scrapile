@@ -138,6 +138,9 @@ pub fn texpr(expr: TExpr, variables: &mut Vec<String>, stmts: &mut Vec<Statement
             Expr::Div(Box::new(lhs), Box::new(rhs))
         },
 
+        // Getting Variables
+        E::VarGet { ident, .. } => Expr::Variable { ident },
+
         _ => todo!(),
     }
 }

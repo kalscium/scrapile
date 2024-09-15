@@ -111,6 +111,12 @@ pub enum Error {
         /// The type of the variable
         var_type: Type,
     },
+
+    /// Occurs when you try to get the value of a variable that doesn't exist
+    VarNotFound {
+        /// The span of the variable use
+        span: Span,
+    },
 }
 
 impl Reportable for Error {
@@ -128,6 +134,7 @@ impl Reportable for Error {
             E::MultipleMain { first_span, additional_span } => ("multiple main procedure definitions are not allowed", additional_span, "unexpected second main procedure definition".to_string(), first_span, "first main procedure defined here".to_string()),
             E::TypeNotFound { span } => ("type not found", span, "this type was not found in the project".to_string(), span, "it may be a typo or otherwise consider adding it or importing it".to_string()),
             E::VarTypeMismatch { span, type_span, expr_type, var_type } => ("variable assigned to with a value of the wrong type", span, format!("this expr is of the wrong type, expected an expr of type `{var_type}`, instead found an expr of type `{expr_type}`"), type_span, format!("variable's type `{var_type}` determined here")),
+            E::VarNotFound { span } => ("variable not found", span, "this variable was not found in the current scope".to_string(), span, "it may be a typo or otherwise consider adding a variable of that name".to_string()),
 
             E::NoMain => {
                 return report
