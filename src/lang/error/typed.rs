@@ -93,6 +93,24 @@ pub enum Error {
 
     /// Occurs when there is no main procedure defined in the project
     NoMain,
+
+    /// Occurs when a type is used that does not exist
+    TypeNotFound {
+        /// The span of the type being used
+        span: Span,
+    },
+
+    /// Occurs when you try to assign a value of the wrong type to a variable
+    VarTypeMismatch {
+        /// The span of the expr
+        span: Span,
+        /// The span of the type declaration of the variable
+        type_span: Span,
+        /// The type of the expr
+        expr_type: Type,
+        /// The type of the variable
+        var_type: Type,
+    },
 }
 
 impl Reportable for Error {
@@ -108,6 +126,8 @@ impl Reportable for Error {
             E::BuiltinLittleArgs { call_span, min } => ("expected a builtin-function argument (too little args)", &(call_span.end-1..call_span.end), "expected an argument".to_string(), call_span, format!("builtin-func expected {min:?} args")),
             E::BuiltinWrongType { call_span, expected, arg_type, arg_span } => ("builtin function's argument is of an incorrect type", arg_span, format!("expected an expr of type `{expected}`, instead found an expr of type `{arg_type}`",), call_span, "occured in this builtin-func call".to_string()),
             E::MultipleMain { first_span, additional_span } => ("multiple main procedure definitions are not allowed", additional_span, "unexpected second main procedure definition".to_string(), first_span, "first main procedure defined here".to_string()),
+            E::TypeNotFound { span } => ("type not found", span, "this type was not found in the project".to_string(), span, "it may be a typo or otherwise consider adding it or importing it".to_string()),
+            E::VarTypeMismatch { span, type_span, expr_type, var_type } => ("variable assigned to with a value of the wrong type", span, format!("this expr is of the wrong type, expected an expr of type `{var_type}`, instead found an expr of type `{expr_type}`"), type_span, format!("variable's type `{var_type}` determined here")),
 
             E::NoMain => {
                 return report

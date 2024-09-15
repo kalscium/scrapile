@@ -1,7 +1,7 @@
 use ketchup::error::KError;
 use logos::SpannedIter;
-use crate::lang::{error::parser::Error, token::Token, Spanned};
-use super::{expr::{parse_expr, Expr}, types::Type, variables::parse_var_declare};
+use crate::lang::{error::parser::Error, token::Token, typed::types::Type, Spanned};
+use super::{expr::{parse_expr, Expr}, variables::parse_var_declare};
 
 #[derive(Debug, Clone)]
 pub enum Stmt {

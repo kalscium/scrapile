@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use ketchup::Span;
-use crate::lang::Spanned;
 use super::types::Type;
 
 /// A hashmap of all the types in a project, the key is the identifier of the type, each type is another hashmap of string property identifiers corresponding to a `u32` unique identifier and a type for that property
@@ -25,7 +24,7 @@ pub struct VarTable {
 #[derive(Debug)]
 pub struct VarTableEntry {
     /// The type of the variable
-    pub var_type: Spanned<Type>,
+    pub var_type: Type,
     /// If the variable is mutable
     pub mutable: bool,
     /// Span of the variable
@@ -41,6 +40,12 @@ impl VarTable {
             table: HashMap::new(),
             scopes: 0,
         }
+    }
+
+    /// Returns a unique identifier according to the current scope
+    #[inline]
+    pub fn ident(&self, ident: &str) -> String {
+        format!("{}/{ident}", self.prefix)
     }
     
     /// Spawns an new child variable table with a custom prefix

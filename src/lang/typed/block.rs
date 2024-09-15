@@ -13,7 +13,7 @@ pub fn wrap_block(block: Block, type_table: &TypeTable, mut var_table: VarTable)
     // iterate through the block's statements and add type annotations to all of them
     let mut stmts = Vec::new();
     for (stmt, span) in block.stmts {
-        let (stmt, stmt_type) = stmt::wrap_stmt(stmt, type_table, &mut var_table)?;
+        let (stmt, stmt_type) = stmt::wrap_stmt((stmt, span.clone()), type_table, &mut var_table)?;
         stmts.push(((stmt, span), stmt_type));
     }
 
@@ -21,7 +21,7 @@ pub fn wrap_block(block: Block, type_table: &TypeTable, mut var_table: VarTable)
     let (tail, tail_type) = match block.tail {
         None => (None, Type::Nil),
         Some((stmt, span)) => {
-            let (stmt, stmt_type) = stmt::wrap_stmt(stmt, type_table, &mut var_table)?;
+            let (stmt, stmt_type) = stmt::wrap_stmt((stmt, span.clone()), type_table, &mut var_table)?;
 
             (Some(((stmt, span), stmt_type.clone())), stmt_type)
         },

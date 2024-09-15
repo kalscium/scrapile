@@ -1,18 +1,6 @@
 use ketchup::error::KError;
 use logos::SpannedIter;
-use crate::lang::{error::parser::Error, token::Token, Spanned};
-
-/// A user-defined type annotation
-#[derive(Debug, Clone)]
-pub enum Type {
-    String,
-    Number,
-    Bool,
-    Tuple(Vec<Spanned<Type>>),
-    Custom {
-        ident: String,
-    },
-}
+use crate::lang::{error::parser::Error, token::Token, typed::types::Type, Spanned};
 
 /// Parses a type usage
 pub fn parse_type(first_tok: Option<Spanned<Result<Token, Error>>>, tokens: &mut SpannedIter<'_, Token>) -> Result<Spanned<Type>, Vec<KError<Error>>> {
@@ -43,7 +31,7 @@ pub fn parse_type(first_tok: Option<Spanned<Result<Token, Error>>>, tokens: &mut
     }
 }
 
-fn parse_tuple_type(tokens: &mut SpannedIter<'_, Token>) -> Result<Vec<Spanned<Type>>, Vec<KError<Error>>> {
+fn parse_tuple_type(tokens: &mut SpannedIter<'_, Token>) -> Result<Vec<Type>, Vec<KError<Error>>> {
     let start_span = tokens.span();
     let mut types = Vec::new();
 
@@ -62,7 +50,7 @@ fn parse_tuple_type(tokens: &mut SpannedIter<'_, Token>) -> Result<Vec<Spanned<T
     };
 
     // parse the first type
-    let atype = parse_type(first_tok, tokens)?;
+    let (atype, _) = parse_type(first_tok, tokens)?;
     types.push(atype);
 
     while let Some((token, span)) = tokens.next() {
@@ -76,7 +64,7 @@ fn parse_tuple_type(tokens: &mut SpannedIter<'_, Token>) -> Result<Vec<Spanned<T
                     None => return Err(vec![KError::Other(tokens.span(), Error::ExpectedCommaOrRParen { ctx_span: start_span })]),
 
                     // parse next type
-                    token => types.push(parse_type(token, tokens)?),
+                    token => types.push(parse_type(token, tokens)?.0),
                 }
             },
             _ => return Err(vec![KError::Other(span, Error::ExpectedCommaOrRParen { ctx_span: start_span })]),
