@@ -61,7 +61,7 @@ pub enum Error {
         /// The location of the `let` var declaration
         ctx_span: Span,
     },
-    /// Occurs when the `let` var declaration cannot find a `=`
+    /// Occurs when the  var assignment cannot find a `=`
     ExpectedEQ {
         /// The location of the `let` var declaration
         ctx_span: Span,
@@ -69,7 +69,7 @@ pub enum Error {
 
     /// Occurs when something expects an identifier but cannot find one
     ExpectedIdent {
-        /// The location of the declaration
+        /// The location of the statement
         ctx_span: Span,
     },
 }
@@ -102,9 +102,9 @@ impl Reportable for KError<Error> {
 
                 E::ExpectedMutOrIdent { ctx_span } => ("expected either a `mut` keyword or identifier in `let` statement", span, "found this instead", ctx_span, "in this let statement"),
                 E::ExpectedColonOrEQ { ctx_span } => ("expected either a `:` (for type annotations) or a `=` (for value definition) in let statement", span, "found this instead", ctx_span, "in this let statement"),
-                E::ExpectedEQ { ctx_span } => ("expected a `=` to define a value in let statement", span, "found this instead", ctx_span, "in this let statement"),
+                E::ExpectedEQ { ctx_span } => ("expected a `=` to define a value in variable assignment statement", span, "found this instead", ctx_span, "in this var assign statement"),
 
-                E::ExpectedIdent { ctx_span } => ("expected an identifier", span, "found this instead", ctx_span, "in this declaration"),
+                E::ExpectedIdent { ctx_span } => ("expected an identifier", span, "found this instead", ctx_span, "in this statement"),
             },
         };
 

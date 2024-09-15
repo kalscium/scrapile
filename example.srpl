@@ -34,6 +34,11 @@ main {
     println!("here is a nil value cast to a string: " <> as_str!(nil_value));
 
     # Now it's time to ask the user a question
-    let username = input!("What's your name?");
-    println!("hello, there " <> username <> "! nice to meet you!"); // greet the user
+    let mut username = input!("What's your first name?");
+
+    # Lets mutate it
+    mut username = username <> " " <> input!("What's your last name?");
+    
+    // Lets print the greeting
+    println!("hello there " <> username <> "! nice to meet you!");
 }

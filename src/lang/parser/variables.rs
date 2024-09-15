@@ -3,7 +3,35 @@ use logos::SpannedIter;
 use crate::lang::{error::parser::Error, parser::{expr::parse_expr, types::parse_type}, token::Token, Spanned};
 use super::stmt::Stmt;
 
-/// Parses variable delcaration / definition (given that the `Let` token as already been consumed)
+/// Parses a variable mutation (given that the `Mut` token has already been consumed)
+pub fn parse_var_mutate(tokens: &mut SpannedIter<'_, Token>) -> Result<(Spanned<Stmt>, Option<(Result<Token, Error>, Span)>), Vec<KError<Error>>> {
+    let start_span = tokens.span();
+
+    // get the identifier of the variable mutation
+    let ident = match tokens.next() {
+        Some((Ok(Token::Ident(ident)), span)) => (ident, span),
+        Some((Err(err), span)) => return Err(vec![KError::Other(span, err)]),
+
+        _ => return Err(vec![KError::Other(tokens.span(), Error::ExpectedIdent { ctx_span: start_span })])
+    };
+
+    // check for the `=` token
+    match tokens.next() {
+        Some((Ok(Token::EQ), _)) => (),
+        Some((Err(err), span)) => return Err(vec![KError::Other(span, err)]),
+
+        _ => return Err(vec![KError::Other(tokens.span(), Error::ExpectedEQ { ctx_span: start_span })])
+    }
+
+    // get variable value
+    let (value, next_tok) = parse_expr(tokens.next(), tokens)?;
+
+    // return variable mutation statement
+    let span = start_span.start..value.span.end;
+    Ok(((Stmt::VarMutate { ident, value }, span), next_tok.map(|(tok, span)| (Ok(tok), span))))
+}
+
+/// Parses variable delcaration / definition (given that the `Let` token has already been consumed)
 pub fn parse_var_declare(tokens: &mut SpannedIter<'_, Token>) -> Result<(Spanned<Stmt>, Option<(Result<Token, Error>, Span)>), Vec<KError<Error>>> {
     let start_span = tokens.span();
 

@@ -15,7 +15,7 @@ pub fn translate(project: Project) -> Assembly {
 
     Assembly {
         stmts,
-        variables: Vec::new(),
+        variables,
         lists: Vec::new(),
         procedures: Vec::new(),
     }
@@ -29,6 +29,10 @@ pub fn tstmt(stmt: TStmt, variables: &mut Vec<String>, stmts: &mut Vec<Statement
         TStmt::Expr(expr) => {texpr(expr, variables, stmts);},
         TStmt::VarDeclare { ident, value } => {
             variables.push(ident.clone());
+            let stmt = Statement::SetVar { ident, value: texpr(value.0.0, variables, stmts) };
+            stmts.push(stmt);
+        },
+        TStmt::VarMutate { ident, value } => {
             let stmt = Statement::SetVar { ident, value: texpr(value.0.0, variables, stmts) };
             stmts.push(stmt);
         },

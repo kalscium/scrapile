@@ -117,6 +117,14 @@ pub enum Error {
         /// The span of the variable use
         span: Span,
     },
+
+    /// Occurs when you try to assign to an immutable variable
+    AssignToImmutable {
+        /// The span of the variable itself
+        var_span: Span,
+        /// The span of the mutation statement
+        span: Span,
+    },
 }
 
 impl Reportable for Error {
@@ -135,6 +143,7 @@ impl Reportable for Error {
             E::TypeNotFound { span } => ("type not found", span, "this type was not found in the project".to_string(), span, "it may be a typo or otherwise consider adding it or importing it".to_string()),
             E::VarTypeMismatch { span, type_span, expr_type, var_type } => ("variable assigned to with a value of the wrong type", span, format!("this expr is of the wrong type, expected an expr of type `{var_type}`, instead found an expr of type `{expr_type}`"), type_span, format!("variable's type `{var_type}` determined here")),
             E::VarNotFound { span } => ("variable not found", span, "this variable was not found in the current scope".to_string(), span, "it may be a typo or otherwise consider adding a variable of that name".to_string()),
+            E::AssignToImmutable { var_span, span } => ("assignment to an immutable variable", span, "invalid mutation to a variable that is immutable".to_string(), var_span, "variable declared here, consider adding the `mut` keyword after `let` to make it mutable".to_string()),
 
             E::NoMain => {
                 return report

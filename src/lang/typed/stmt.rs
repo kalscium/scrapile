@@ -12,6 +12,12 @@ pub enum TStmt {
         ident: String,
         value: Typed<Spanned<TExpr>>,
     },
+
+    /// A variable mutation with `mut`
+    VarMutate {
+        ident: String,
+        value: Typed<Spanned<TExpr>>,
+    },
 }
 
 /// Adds type annotations to a statement
@@ -23,6 +29,31 @@ pub fn wrap_stmt(stmt: Spanned<Stmt>, type_table: &TypeTable, var_table: &mut Va
             let stmt_type = expr.1.clone();
 
             Ok((TStmt::Expr(expr.0.0), stmt_type))
+        },
+        Stmt::VarMutate { ident, value } => {
+            let (value, _) = wrap_expr(&value.asa, type_table, var_table)?; // wrap value
+
+            // make sure the variable exists and if so, get the type of it
+            let (var_ident, var_type, mutable, var_span) = match var_table.get(&ident.0) {
+                Some((ident, entry)) => (ident, entry.var_type.clone(), entry.mutable, entry.span.clone()),
+                None => return Err(Error::VarNotFound { span: ident.1 }),
+            };
+
+            // make sure the variable is mutable in the first place
+            if !mutable {
+                return Err(Error::AssignToImmutable { var_span, span });
+            }
+            
+            // make sure the type of the variable and the type of the value are the same, otherwise throw error
+            if value.1 != var_type {
+                return Err(Error::VarTypeMismatch { span: value.0.1, type_span: var_span, expr_type: value.1, var_type });
+            }
+
+            // return valid variable mutation
+            Ok((
+                TStmt::VarMutate { ident: var_ident, value },
+                Type::Nil
+            ))
         },
         Stmt::VarDeclare { mutable, ident, atype, value } => {
             let (value, _) = wrap_expr(&value.asa, type_table, var_table)?; // wrap value
