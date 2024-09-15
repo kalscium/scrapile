@@ -27,6 +27,8 @@ main {
     println!("dave is very cool");
     println!("dave is also " <> as_str!(6 + 4 * 4) <> " years old");
 
+    let message: str = "hello, world";
+
     println!();
 
     println!("what is your name?");
