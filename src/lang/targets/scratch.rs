@@ -118,6 +118,9 @@ pub fn texpr(expr: TExpr, variables: &mut Vec<String>, lists: &mut Vec<String>, 
                     stmts.push(Statement::Ask { prompt });
                     Expr::Answer
                 },
+
+                // convert the `timer` builtin to it's scratch counterpart
+                B::Timer => Expr::Timer,
                 
                 // convert the `println` builtin to it's scratch counterpart
                 B::PrintLn(args) => {

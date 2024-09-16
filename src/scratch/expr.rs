@@ -23,6 +23,7 @@ pub enum Expr {
 
     // Asking
     Answer,
+    Timer,
 
     // list & variable operations
     Variable { ident: String },
@@ -168,6 +169,20 @@ pub(super) fn parse_expr(expr: Expr, expr_blocks: &mut Vec<JsonValue>) -> JsonVa
         E::Answer => {
             let json = object! {
                 opcode: "sensing_answer",
+                next: null,
+                parent: null,
+                inputs: {},
+                fields: {},
+                shadow: false,
+                topLevel: false,
+            };
+            expr_blocks.push(json);
+
+            expr_idx_to_id(expr_blocks.len()-1).into()
+        },
+        E::Timer => {
+            let json = object! {
+                opcode: "sensing_timer",
                 next: null,
                 parent: null,
                 inputs: {},

@@ -8,6 +8,7 @@ pub enum TBuiltinFnCall {
     PrintLn(Option<Spanned<TExpr>>),
     AsString(Spanned<TExpr>),
     Input(Spanned<TExpr>),
+    Timer,
 }
 
 /// Add type annotations to builtin-function calls
@@ -16,6 +17,7 @@ pub fn wrap_builtin(ident: &str, ident_span: Span, span: Span, args: &[Expr], ty
         "println" => builtin_println(span, args, type_table, var_table),
         "as_str" => builtin_as_str(span, args, type_table, var_table),
         "input" => builtin_input(span, args, type_table, var_table),
+        "timer" => builtin_timer(span, args),
 
         // if the builtin function is not found, then return error
         _ => return Err(Error::BuiltinNotFound {
@@ -51,6 +53,21 @@ fn builtin_as_str(span: Span, args: &[Expr], type_table: &TypeTable, var_table: 
         TBuiltinFnCall::AsString(arg),
         Type::String,
     ))
+}
+
+/// Add type annotations to `timer` builtin-function calls
+fn builtin_timer(span: Span, args: &[Expr]) -> Result<Typed<TBuiltinFnCall>, Error> {
+    // make sure there's no arguments
+    if args.len() != 0 {
+        return Err(Error::BuiltinManyArgs {
+            call_span: span,
+            max: 0..1,
+            arg_span: args[0].span.clone(),
+        });
+    }
+
+    // return the `timer` call
+    Ok((TBuiltinFnCall::Timer, Type::Number))
 }
 
 /// Add type annotations to `input` builtin-function calls

@@ -6,6 +6,8 @@ main {
         Stuff that isn't printed to the screen or setting variables (expressions) are getting filtered out
     */
 
+    let start_time = timer!(); # start a timer
+
     // here is the classic hello world
     println!("hello, world"); # identical syntax to rust, but a very different implementation
 
@@ -45,4 +47,8 @@ main {
     // heres a list
     let mut list: [str] = ["hello", "there", "here", "is", "a", "list", "of", "strings"];
     mut list = ["nice"];
+
+    # end the timer
+    let end_time = timer!();
+    println!("program took " <> as_str!(end_time - start_time) <> "s to complete");
 }
