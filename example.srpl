@@ -35,6 +35,8 @@ main {
 
     println!("here is a nil value cast to a string: " <> as_str!(nil_value));
 
+    panic!();
+
     # Now it's time to ask the user a question
     let mut username = input!("What's your first name?");
 

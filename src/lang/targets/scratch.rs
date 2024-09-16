@@ -1,8 +1,19 @@
-use crate::{lang::typed::{expr::TExpr, root::Project, stmt::TStmt, types::Type}, scratch::{Assembly, Expr, Statement}};
+use crate::{lang::typed::{expr::TExpr, root::Project, stmt::TStmt, types::Type}, scratch::{Assembly, Expr, Procedure, Statement}};
 
 /// Translates a project into scratch assembly
 pub fn translate(project: Project) -> Assembly {
     let mut stmts = vec![Statement::ClearList { ident: "console".to_string() }]; // first statement is to clear the console
+
+    let procedures = vec![
+        // panic
+        Procedure {
+            ident: "$panic".to_string(),
+            body: vec![
+                Statement::PushList { ident: "console".to_string(), value: Expr::Variable { ident: PANIC_NAME.to_string() } },
+                Statement::StopAll,
+            ],
+        },
+    ];
     
     // translate the main procedure's statements
     for stmt in project.main.0.stmts {
@@ -15,12 +26,13 @@ pub fn translate(project: Project) -> Assembly {
     Assembly {
         stmts,
         variables: Vec::new(),
-        lists: vec!["console".to_string()],
-        procedures: Vec::new(),
+        lists: Vec::new(),
+        procedures,
     }
 }
 
 const NIL: &str = "<nil>";
+const PANIC_NAME: &str = "$panic$msg";
 
 /// Translates a statement
 pub fn tstmt(stmt: TStmt, stmts: &mut Vec<Statement>) {
@@ -124,6 +136,27 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>) -> Expr {
                     };
 
                     stmts.push(stmt);
+                    Expr::String(NIL.to_string())
+                },
+
+                // convert the `panic` builtin to it's scratch ounterpart
+                B::Panic(span, arg) => {
+                    let arg = match arg {
+                        Some(arg) => texpr(arg.0, stmts),
+                        None => Expr::String("explicit panic".to_string()),
+                    };
+
+                    // set the panic message
+                    stmts.push(Statement::SetVar { ident: PANIC_NAME.to_string(), value: {
+                        Expr::Concat(
+                            Box::new(Expr::String(format!("panic at <{span:?}>: "))),
+                            Box::new(arg),
+                        )
+                    } });
+
+                    // call the panic
+                    stmts.push(Statement::CallProcedure { ident: "$panic".to_string() });
+
                     Expr::String(NIL.to_string())
                 },
             }

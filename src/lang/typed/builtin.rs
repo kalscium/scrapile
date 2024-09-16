@@ -9,6 +9,7 @@ pub enum TBuiltinFnCall {
     AsString(Spanned<TExpr>),
     Input(Spanned<TExpr>),
     Timer,
+    Panic(Span, Option<Spanned<TExpr>>),
 }
 
 /// Add type annotations to builtin-function calls
@@ -18,6 +19,7 @@ pub fn wrap_builtin(ident: &str, ident_span: Span, span: Span, args: &[Expr], ty
         "as_str" => builtin_as_str(span, args, type_table, var_table),
         "input" => builtin_input(span, args, type_table, var_table),
         "timer" => builtin_timer(span, args),
+        "panic" => builtin_panic(span, args, type_table, var_table),
 
         // if the builtin function is not found, then return error
         _ => return Err(Error::BuiltinNotFound {
@@ -132,6 +134,45 @@ fn builtin_println(span: Span, args: &[Expr], type_table: &TypeTable, var_table:
     // return println call
     Ok((
         TBuiltinFnCall::PrintLn(Some(arg.0)),
+        Type::Nil,
+    ))
+}
+
+/// Add type annotations to `println` builtin-function calls
+fn builtin_panic(span: Span, args: &[Expr], type_table: &TypeTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
+    // make sure there's only one or no arguments, otherwise, throw error
+    if args.len() > 1 {
+        return Err(Error::BuiltinManyArgs {
+            call_span: span,
+            max: 0..2,
+            arg_span: args[1].span.clone(),
+        });
+    }
+
+    // if there are no arugments, return early
+    if args.is_empty() {
+        return Ok((
+            TBuiltinFnCall::Panic(span, None),
+            Type::Nil,
+        ));
+    }
+    
+    // evaluate the first and *only* argument and make sure it's a string, otherwise throw error
+    let (arg, _) = wrap_expr(&args[0].asa, type_table, var_table)?;
+    if arg.1 != Type::String {
+        return Err(
+            Error::BuiltinWrongType {
+                call_span: span,
+                expected: Type::String,
+                arg_type: arg.1,
+                arg_span: arg.0.1,
+            }
+        );
+    }
+
+    // return panic call
+    Ok((
+        TBuiltinFnCall::Panic(span, Some(arg.0)),
         Type::Nil,
     ))
 }

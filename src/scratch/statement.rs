@@ -23,8 +23,6 @@ pub enum Statement {
         ident: String,
         value: Expr,
     },
-    ShowVar { ident: String },
-    HideVar { ident: String },
 
     PushList {
         ident: String,
@@ -44,9 +42,9 @@ pub enum Statement {
         value: Expr,
         idx: Expr,
     },
-    ShowList { ident: String },
-    HideList { ident: String },
     ClearList { ident: String },
+
+    StopAll,
 }
 
 /// Parses a scratch statement and outupts the generated json
@@ -136,6 +134,18 @@ pub(super) fn parse_stmt(stmt: &Statement, expr_blocks: &mut Vec<JsonValue>) -> 
                     ],
                 },
                 fields: {},
+            }
+        },
+        S::StopAll => {
+            object! {
+                opcode: "control_stop",
+                inputs: {},
+                fields: {
+                    STOP_OPTION: [
+                        "all",
+                        null,
+                    ],
+                },
             }
         },
         _ => todo!(),

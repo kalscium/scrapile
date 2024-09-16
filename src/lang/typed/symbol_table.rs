@@ -38,7 +38,9 @@ pub struct VarTableEntry {
 impl VarTable {
     // # Variable Identifier Naming Scheme
     // ---
-    // $: a compiler generated name
+    // $: a compiler generated name for a scope
+    // #: user defined functions
+    // /: user defined variables (within scopes)
 
     /// Creates a new emtpy var-table
     #[inline]
