@@ -3,7 +3,7 @@ use crate::{lang::typed::{expr::TExpr, root::Project, stmt::TStmt, types::Type},
 /// Translates a project into scratch assembly
 pub fn translate(project: Project) -> Assembly {
     let mut stmts = vec![Statement::ClearList { ident: "console".to_string() }]; // first statement is to clear the console
-    let mut variables = vec!["$i".to_string()]; // $i var is for loops
+    let mut variables = Vec::new();
     let mut lists = Vec::new();
     
     // translate the main procedure's statements

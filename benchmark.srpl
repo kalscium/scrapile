@@ -1,0 +1,14 @@
+main {
+	let start_time = timer!();
+
+	#################
+	# Program Start #
+	#################
+
+	#################
+	#  Program End  #
+	#################
+
+	let end_time = timer!();
+	println!("program took " <> as_str!(end_time - start_time) <> "s to complete");
+}
