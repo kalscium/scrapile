@@ -27,6 +27,9 @@ pub fn parse_type(first_tok: Option<Spanned<Result<Token, Error>>>, tokens: &mut
         // tuples
         Token::LParen => Ok((Type::Tuple(parse_tuple_type(tokens)?), start_span.start..tokens.span().end)),
 
+        // lists
+        Token::LBracket => Ok((parse_list_type(tokens)?, start_span.start..tokens.span().end)),
+
         // invalid types
         _ => Err(vec![KError::Other(start_span, Error::ExpectedType)]),
     }
@@ -38,8 +41,7 @@ fn parse_tuple_type(tokens: &mut SpannedIter<'_, Token>) -> Result<Vec<Type>, Ve
 
     // get the first token of the tuple type and also check for `)` for nill tuples
     let first_tok = match tokens.next() {
-        Some((token, span)) => {
-            let token = token.map_err(|err| vec![KError::Other(span.clone(), err)])?;
+        Some((Ok(token), span)) => {
             if token == Token::RParen {
                 return Ok(types); // return empty tuple type
             }
@@ -47,6 +49,7 @@ fn parse_tuple_type(tokens: &mut SpannedIter<'_, Token>) -> Result<Vec<Type>, Ve
             // return token
             Some((Ok(token), span))
         },
+        Some((Err(err), span)) => return Err(vec![KError::Other(span, err)]),
         None => return Err(vec![KError::Other(tokens.span(), Error::UnclosedParentheses { ctx_span: start_span })]), // if there is never a `)`
     };
 
@@ -74,4 +77,21 @@ fn parse_tuple_type(tokens: &mut SpannedIter<'_, Token>) -> Result<Vec<Type>, Ve
 
     // this section of code can only be reached when the tuple is never terminated with `)`
     Err(vec![KError::Other(tokens.span(), Error::UnclosedParentheses { ctx_span: start_span })])
+}
+
+fn parse_list_type(tokens: &mut SpannedIter<'_, Token>) -> Result<Type, Vec<KError<Error>>> {
+    let start_span = tokens.span();
+
+    // get the type of the list
+    let list_type = parse_type(tokens.next(), tokens)?;
+
+    // make sure the list is terminated
+    match tokens.next() {
+        Some((Ok(Token::RBracket), _)) => (),
+        Some((Err(err), span)) => return Err(vec![KError::Other(span, err)]),
+        _ => return Err(vec![KError::Other(tokens.span(), Error::UnclosedBrackets { ctx_span: start_span })]), // if there isn't a `]` found
+    };
+
+    // return list type
+    Ok(Type::List(Box::new(list_type)))
 }

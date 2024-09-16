@@ -38,6 +38,7 @@ pub enum ExprOper {
     LTE,
 
     Tuple(Vec<Expr>),
+    List(Vec<Expr>),
     Call(String, Vec<Expr>),
     BuiltinFnCall {
         ident: String,
@@ -54,7 +55,6 @@ pub fn parse_expr(first_tok: Option<Spanned<Result<Token, Error>>>, tokens: &mut
 
     let span_start = asa.first().map(|node| node.info.span.start).unwrap_or(start_span.start);
     let span_end = asa.last().map(|node| node.info.span.end).unwrap_or(start_span.end);
-
     // ensure that the expr is not empty
     if asa.is_empty() {
         return Err(vec![KError::Other(span_start..span_end, Error::ExpectedExpr)]);
@@ -119,6 +119,17 @@ fn parse_block(tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<E
 
     Ok(Some((OperInfo {
         oper: ExprOper::Block(block),
+        span,
+        space: Space::None,
+        precedence: 0,
+    }, tokens.next())))
+}
+
+fn parse_list(tokens: &mut SpannedIter<'_, Token>) -> Result<Option<(OperInfo<ExprOper>, Option<Spanned<Result<Token, Error>>>)>, Vec<KError<Error>>> {
+    let (list, span) = super::list::parse_list(tokens)?;
+
+    Ok(Some((OperInfo {
+        oper: ExprOper::List(list),
         span,
         space: Space::None,
         precedence: 0,
@@ -208,6 +219,7 @@ fn oper_generator(token: Token, tokens: &mut SpannedIter<'_, Token>, double_spac
         // tuples & blocks
         (T::LParen, _) => return parse_tuple(tokens),
         (T::LBrace, _) => return parse_block(tokens),
+        (T::LBracket, _) => return parse_list(tokens),
 
         // tokens this oper generator doesn't recognise
         _ => return Ok(None),

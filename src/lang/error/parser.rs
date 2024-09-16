@@ -28,6 +28,11 @@ pub enum Error {
         /// The location of the start of the brace
         ctx_span: Span,
     },
+    /// Occurs when there is an unclosed bracket
+    UnclosedBrackets {
+        /// The location of the start of the bracket
+        ctx_span: Span,
+    },
     /// Occurs when there is a token besides a comma or right-parenthesis
     ExpectedCommaOrRParen {
         /// The location of the start of the tuple
@@ -36,6 +41,11 @@ pub enum Error {
     /// Occurs when there is a token besides a semi-colon or right-brace
     ExpectedSemiOrRBrace {
         /// The location of the start of the block
+        ctx_span: Span,
+    },
+    /// Occurs when there is a token besides a comma or right-bracket
+    ExpectedCommaOrRBracket {
+        /// The location of the start of the list
         ctx_span: Span,
     },
 
@@ -95,8 +105,10 @@ impl Reportable for KError<Error> {
 
                 E::UnclosedParentheses { ctx_span } => ("unclosed parentheses", span, "expected `)`", ctx_span, "to complete this tuple"),
                 E::UnclosedBrace { ctx_span } => ("unclosed brace", span, "expected `}`", ctx_span, "to complete this block"),
-                E::ExpectedCommaOrRParen { ctx_span } => ("expected comma or right parenthesis", span, "expected `,`, `)`", ctx_span, "to continue or complete this tuple"),
+                E::UnclosedBrackets { ctx_span } => ("unclosed brackets", span, "expected `]`", ctx_span, "to complete this list"),
+                E::ExpectedCommaOrRParen { ctx_span } => ("expected comma or `)`", span, "expected `,` or `)`", ctx_span, "to continue or complete this tuple"),
                 E::ExpectedSemiOrRBrace { ctx_span } => ("expected semi-colon or right brace", span, "expected `;` or `}`", ctx_span, "to continue or complete this block"),
+                E::ExpectedCommaOrRBracket { ctx_span } => ("expected comma or `]`", span, "expected `,` or `]`", ctx_span, "to continue or complete this list"),
                 E::ExpectedCallLParen { ctx_span } => ("expected arguments for this function call", span, "expected arguments `(`", ctx_span, "this func call expected args" ),
                 E::ExpectedBlockForMain { ctx_span } => ("expected a body for the main procedure", span, "expected body `{`", ctx_span, "expected due to the `main` keyword"),
 

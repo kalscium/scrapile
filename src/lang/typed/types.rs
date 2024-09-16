@@ -10,6 +10,7 @@ pub enum Type {
     Nil,
 
     Tuple(Vec<Type>),
+    List(Box<Spanned<Type>>),
 
     Custom {
         ident: String,
@@ -23,7 +24,8 @@ impl Display for Type {
             Type::Nil => "nil".to_string(),
             Type::String => "str".to_string(),
             Type::Bool => "bool".to_string(),
-            Type::Tuple(types) => format!("tuple({})", types.into_iter().map(|t| t.to_string()).collect::<Vec<_>>().join(", ")), // may not be the most efficient
+            Type::Tuple(types) => format!("({})", types.into_iter().map(|t| t.to_string()).collect::<Vec<_>>().join(", ")), // may not be the most efficient
+            Type::List(list_type) => format!("[{}]", list_type.0),
             Type::Custom { ident } => format!("struct {{{ident}}}"),
         })
     }
