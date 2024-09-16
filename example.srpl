@@ -38,6 +38,8 @@ main {
 
     # Lets mutate it
     mut username = username <> " " <> input!("What's your last name?");
+
+    let list = [12];
     
     // Lets print the greeting
     println!("hello there " <> username <> "! nice to meet you!");

@@ -125,6 +125,18 @@ pub enum Error {
         /// The span of the mutation statement
         span: Span,
     },
+
+    /// Occurs when there is a type mismatch within a list (two elements of different types)
+    ListElementTypeMismatch {
+        /// The span of the first element
+        first_span: Span,
+        /// The first element's type
+        first_type: Type,
+        /// The span of the invalid element
+        el_span: Span,
+        /// The type of the invalid element
+        el_type: Type,
+    },
 }
 
 impl Reportable for Error {
@@ -144,6 +156,7 @@ impl Reportable for Error {
             E::VarTypeMismatch { span, type_span, expr_type, var_type } => ("variable assigned to with a value of the wrong type", span, format!("this expr is of the wrong type, expected an expr of type `{var_type}`, instead found an expr of type `{expr_type}`"), type_span, format!("variable's type `{var_type}` determined here")),
             E::VarNotFound { span } => ("variable not found", span, "this variable was not found in the current scope".to_string(), span, "it may be a typo or otherwise consider adding a variable of that name".to_string()),
             E::AssignToImmutable { var_span, span } => ("assignment to an immutable variable", span, "invalid mutation to a variable that is immutable".to_string(), var_span, "variable declared here, consider adding the `mut` keyword after `let` to make it mutable".to_string()),
+            E::ListElementTypeMismatch { first_span, first_type, el_span, el_type } => ("list element's type doesn't match the type of the list", el_span, format!("expected an element of type `{first_type}`, instead found an element of type `{el_type}`"), first_span, format!("list is of type `{first_type}` due to the first element's type")),
 
             E::NoMain => {
                 return report

@@ -83,7 +83,7 @@ fn parse_list_type(tokens: &mut SpannedIter<'_, Token>) -> Result<Type, Vec<KErr
     let start_span = tokens.span();
 
     // get the type of the list
-    let list_type = parse_type(tokens.next(), tokens)?;
+    let (list_type, _) = parse_type(tokens.next(), tokens)?;
 
     // make sure the list is terminated
     match tokens.next() {

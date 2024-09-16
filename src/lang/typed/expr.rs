@@ -36,6 +36,7 @@ pub enum TExpr {
         ident: String,
         var_type: Type,
     },
+    List(Type, Vec<Spanned<TExpr>>),
 }
 
 /// Wraps an expr with types and also returns it's current location in the asa
@@ -94,6 +95,45 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
                         asa[0].info.span.clone(),
                     ),
                     Type::Tuple(types),
+                ),
+                0,
+            )
+        },
+
+        // lists
+        EO::List(list) => {
+            // get the type of the first element in the list
+            let (list_type, list_type_span, mut exprs) = match list.get(0) {
+                Some(expr) => {
+                    let ((expr, expr_type), _) = wrap_expr(&expr.asa, type_table, var_table)?;
+                    (expr_type.clone(), expr.1.clone(), vec![expr])
+                },
+                None => (Type::Nil, asa[0].info.span.clone(), Vec::new()),
+            };
+
+            // wrap the rest of the list's elements and make sure they're all of the correct type
+            for (i, expr) in list.into_iter().enumerate() {
+                // skip the first expr as it's set already
+                if i == 0 { continue };
+
+                // wrap the expr make sure it's the right type
+                let (((expr, expr_span), expr_type), _) = wrap_expr(&expr.asa, type_table, var_table)?;
+                if expr_type != list_type {
+                    return Err(Error::ListElementTypeMismatch { first_span: list_type_span, first_type: list_type, el_span: expr_span, el_type: expr_type });
+                }
+
+                // push it
+                exprs.push((expr, expr_span));
+            }
+            
+            // return list definition
+            (
+                (
+                    (
+                        TExpr::List(list_type.clone(), exprs),
+                        asa[0].info.span.clone(),
+                    ),
+                    Type::List(Box::new(list_type))
                 ),
                 0,
             )
