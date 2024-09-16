@@ -47,6 +47,7 @@ main {
     // heres a list
     let mut list: [str] = ["hello", "there", "here", "is", "a", "list", "of", "strings"];
     mut list = ["nice"];
+    println!("here is a list cast to a string: " <> as_str!(list));
 
     # end the timer
     let end_time = timer!();
