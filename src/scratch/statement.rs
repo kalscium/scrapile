@@ -88,6 +88,27 @@ pub(super) fn parse_stmt(stmt: &Statement, expr_blocks: &mut Vec<JsonValue>) -> 
                 },
             }
         },
+        S::InsertList { ident, value, idx } => {
+            object! {
+                opcode: "data_insertatlist",
+                inputs: {
+                    ITEM: [
+                        1,
+                        parse_expr(value.clone(), expr_blocks),
+                    ],
+                    INDEX: [
+                        1,
+                        parse_expr(idx.clone(), expr_blocks),
+                    ],
+                },
+                fields: {
+                    LIST: [
+                        **ident,
+                        "",
+                    ],
+                },
+            }
+        },
         S::SetVar { ident, value } => {
             object! {
                 opcode: "data_setvariableto",

@@ -38,9 +38,11 @@ main {
 
     # Lets mutate it
     mut username = username <> " " <> input!("What's your last name?");
-
-    let list = [12];
     
     // Lets print the greeting
     println!("hello there " <> username <> "! nice to meet you!");
+
+    // heres a list
+    let mut list: [str] = ["hello", "there", "here", "is", "a", "list", "of", "strings"];
+    mut list = ["nice"];
 }
