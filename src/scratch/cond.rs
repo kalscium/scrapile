@@ -8,7 +8,7 @@ use super::Expr;
 #[derive(Debug, Clone)]
 pub enum Condition {
     // expr to expr conditinos
-    MoreThan(Expr, Expr),
+    GreaterThan(Expr, Expr),
     LessThan(Expr, Expr),
     EqualTo(Expr, Expr),
 
@@ -48,6 +48,120 @@ pub(super) fn parse_cond(cond: Condition, expr_blocks: &mut Vec<JsonValue>) -> J
             expr_blocks.push(json);
             expr_idx_to_id(expr_blocks.len()-1).into()
         },
-        _ => todo!()
+        C::GreaterThan(lhs, rhs) => {
+            let lhs = parse_expr(lhs, expr_blocks);
+            let rhs = parse_expr(rhs, expr_blocks);
+            let json = object! {
+                opcode: "operator_gt",
+                next: null,
+                parent: null,
+                inputs: {
+                    OPERAND1: [
+                        1,
+                        lhs,
+                    ],
+                    OPERAND2: [
+                        1,
+                        rhs,
+                    ],
+                },
+                fields: {},
+                shadow: false,
+                topLevel: false,
+            };
+            expr_blocks.push(json);
+            expr_idx_to_id(expr_blocks.len()-1).into()
+        },
+        C::LessThan(lhs, rhs) => {
+            let lhs = parse_expr(lhs, expr_blocks);
+            let rhs = parse_expr(rhs, expr_blocks);
+            let json = object! {
+                opcode: "operator_lt",
+                next: null,
+                parent: null,
+                inputs: {
+                    OPERAND1: [
+                        1,
+                        lhs,
+                    ],
+                    OPERAND2: [
+                        1,
+                        rhs,
+                    ],
+                },
+                fields: {},
+                shadow: false,
+                topLevel: false,
+            };
+            expr_blocks.push(json);
+            expr_idx_to_id(expr_blocks.len()-1).into()
+        },
+        C::And(lhs, rhs) => {
+            let lhs = parse_cond(*lhs, expr_blocks);
+            let rhs = parse_cond(*rhs, expr_blocks);
+            let json = object! {
+                opcode: "operator_and",
+                next: null,
+                parent: null,
+                inputs: {
+                    OPERAND1: [
+                        1,
+                        lhs,
+                    ],
+                    OPERAND2: [
+                        1,
+                        rhs,
+                    ],
+                },
+                fields: {},
+                shadow: false,
+                topLevel: false,
+            };
+            expr_blocks.push(json);
+            expr_idx_to_id(expr_blocks.len()-1).into()
+        },
+        C::Or(lhs, rhs) => {
+            let lhs = parse_cond(*lhs, expr_blocks);
+            let rhs = parse_cond(*rhs, expr_blocks);
+            let json = object! {
+                opcode: "operator_or",
+                next: null,
+                parent: null,
+                inputs: {
+                    OPERAND1: [
+                        1,
+                        lhs,
+                    ],
+                    OPERAND2: [
+                        1,
+                        rhs,
+                    ],
+                },
+                fields: {},
+                shadow: false,
+                topLevel: false,
+            };
+            expr_blocks.push(json);
+            expr_idx_to_id(expr_blocks.len()-1).into()
+        },
+        C::Not(cond) => {
+            let cond = parse_cond(*cond, expr_blocks);
+            let json = object! {
+                opcode: "operator_or",
+                next: null,
+                parent: null,
+                inputs: {
+                    OPERAND: [
+                        1,
+                        cond,
+                    ],
+                },
+                fields: {},
+                shadow: false,
+                topLevel: false,
+            };
+            expr_blocks.push(json);
+            expr_idx_to_id(expr_blocks.len()-1).into()
+        },
     }
 }
