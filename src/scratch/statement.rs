@@ -47,6 +47,11 @@ pub enum Statement {
         body: Vec<Statement>,
         otherwise: Vec<Statement>,
     },
+
+    RepeatUntil {
+        condition: Condition,
+        body: Vec<Statement>,
+    },
 }
  /// Parses a scratch statement and outupts the generated json
 pub(super) fn parse_stmt(stmt: Statement, expr_blocks: &mut Vec<JsonValue>) -> JsonValue {
@@ -187,6 +192,25 @@ pub(super) fn parse_stmt(stmt: Statement, expr_blocks: &mut Vec<JsonValue>) -> J
                     SUBSTACK2: [
                         1,
                         otherwise,
+                    ],
+                },
+                fields: {},
+            }
+        },
+        S::RepeatUntil { condition, body } => {
+            let condition = parse_cond(condition, expr_blocks);
+            let body = parse_block(body, expr_blocks);
+
+            object! {
+                opcode: "control_repeat_until",
+                inputs: {
+                    CONDITION: [
+                        1,
+                        condition,
+                    ],
+                    SUBSTACK: [
+                        1,
+                        body,
                     ],
                 },
                 fields: {},

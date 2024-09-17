@@ -19,7 +19,13 @@ fn test_scratch() {
             Statement::IfElse {
                 condition: Condition::EqualTo(Expr::String("false".to_string()), Expr::String("true".to_string())),
                 body: vec![
-                    Statement::PushList { ident: "console".to_string(), value:Expr::String("is true".to_string())  }
+                    Statement::PushList { ident: "console".to_string(), value:Expr::String("is true".to_string())  },
+                    Statement::RepeatUntil {
+                        condition: Condition::EqualTo(Expr::String("true".to_string()), Expr::String("not_equal".to_string())),
+                        body: vec![
+                            Statement::PushList { ident: "console".to_string(), value:Expr::String("forever".to_string())  },
+                        ],
+                    },
                 ],
                 otherwise: vec![
                     Statement::PushList { ident: "console".to_string(), value:Expr::String("is false".to_string())  },
