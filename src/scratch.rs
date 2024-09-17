@@ -7,6 +7,7 @@ pub mod cond;
 pub mod statement;
 pub mod assembler;
 pub mod procedure;
+mod block;
 
 pub use expr::*;
 pub use cond::*;

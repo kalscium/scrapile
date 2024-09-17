@@ -1,18 +1,10 @@
 use json::{object, JsonValue};
-use crate::scratch::call_procedure;
-
-use super::{parse_expr, Expr};
+use crate::scratch::{block::parse_block, call_procedure, parse_cond};
+use super::{parse_expr, Condition, Expr};
 
 /// A statement in scratch (doesn't return anything)
 #[derive(Debug, Clone)]
 pub enum Statement {
-    // If {
-    //     condition: Condition,
-    //     body: Vec<Statement>,
-    //     /// else
-    //     otherwise: Option<Vec<Statement>>,
-    // },
-
     CallProcedure {
         ident: String,
     },
@@ -45,14 +37,23 @@ pub enum Statement {
     ClearList { ident: String },
 
     StopAll,
-}
 
-/// Parses a scratch statement and outupts the generated json
-pub(super) fn parse_stmt(stmt: &Statement, expr_blocks: &mut Vec<JsonValue>) -> JsonValue {
+    If {
+        condition: Condition,
+        body: Vec<Statement>,
+    },
+    IfElse {
+        condition: Condition,
+        body: Vec<Statement>,
+        otherwise: Vec<Statement>,
+    },
+}
+ /// Parses a scratch statement and outupts the generated json
+pub(super) fn parse_stmt(stmt: Statement, expr_blocks: &mut Vec<JsonValue>) -> JsonValue {
     use Statement as S;
 
     match stmt {
-        S::CallProcedure { ident } => call_procedure(ident),
+        S::CallProcedure { ident } => call_procedure(&ident),
         S::PushList { ident, value } => {
             object! {
                 opcode: "data_addtolist",
@@ -66,7 +67,7 @@ pub(super) fn parse_stmt(stmt: &Statement, expr_blocks: &mut Vec<JsonValue>) -> 
                 },
                 fields: {
                     LIST: [
-                        **ident,
+                        ident,
                         ""
                     ],
                 },
@@ -80,7 +81,7 @@ pub(super) fn parse_stmt(stmt: &Statement, expr_blocks: &mut Vec<JsonValue>) -> 
                 inputs: {},
                 fields: {
                     LIST: [
-                        **ident,
+                        ident,
                         ""
                     ],
                 },
@@ -101,7 +102,7 @@ pub(super) fn parse_stmt(stmt: &Statement, expr_blocks: &mut Vec<JsonValue>) -> 
                 },
                 fields: {
                     LIST: [
-                        **ident,
+                        ident,
                         "",
                     ],
                 },
@@ -118,7 +119,7 @@ pub(super) fn parse_stmt(stmt: &Statement, expr_blocks: &mut Vec<JsonValue>) -> 
                 },
                 fields: {
                     VARIABLE: [
-                        **ident,
+                        ident,
                         ""
                     ],
                 },
@@ -146,6 +147,49 @@ pub(super) fn parse_stmt(stmt: &Statement, expr_blocks: &mut Vec<JsonValue>) -> 
                         null,
                     ],
                 },
+            }
+        },
+        S::If { condition, body } => {
+            let condition = parse_cond(condition, expr_blocks);
+            let body = parse_block(body, expr_blocks);
+
+            object! {
+                opcode: "control_if",
+                inputs: {
+                    CONDITION: [
+                        1,
+                        condition,
+                    ],
+                    SUBSTACK: [
+                        1,
+                        body,
+                    ],
+                },
+                fields: {},
+            }
+        },
+        S::IfElse { condition, body, otherwise } => {
+            let condition = parse_cond(condition, expr_blocks);
+            let body = parse_block(body, expr_blocks);
+            let otherwise = parse_block(otherwise, expr_blocks);
+
+            object! {
+                opcode: "control_if_else",
+                inputs: {
+                    CONDITION: [
+                        1,
+                        condition,
+                    ],
+                    SUBSTACK: [
+                        1,
+                        body,
+                    ],
+                    SUBSTACK2: [
+                        1,
+                        otherwise,
+                    ],
+                },
+                fields: {},
             }
         },
         _ => todo!(),

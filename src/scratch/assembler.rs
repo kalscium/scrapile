@@ -23,14 +23,14 @@ pub struct Assembly {
 /// The scratch equivelent of an 'assembler'; it takes in instructions that are very close to the scratch equivelant and generates the final `.sb3` project
 ///
 /// it also requires a list of all the variable and list ids used in the statements
-pub fn assemble(assembly: &Assembly) -> JsonValue {
+pub fn assemble(assembly: Assembly) -> JsonValue {
     // parse statements
     let mut expr_blocks = Vec::new();
-    let stmt_blocks = assembly.stmts.iter()
+    let stmt_blocks = assembly.stmts.into_iter()
         .map(|stmt| parse_stmt(stmt, &mut expr_blocks))
         .collect::<Vec<_>>();
     // parse procedures
-    for procedure in assembly.procedures.iter() {
+    for procedure in assembly.procedures.into_iter() {
         parse_procedure(procedure, &mut expr_blocks);
     }
 

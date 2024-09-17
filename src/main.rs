@@ -1,10 +1,10 @@
 use std::fs;
 
 use logos::Logos;
-use scrapile::{lang::{error::Reportable, parser, targets, token::Token, typed}, scratch::{add_console, Assembly, Expr, Procedure, Statement}};
+use scrapile::{lang::{error::Reportable, parser, targets, token::Token, typed}, scratch::{add_console, Assembly, Condition, Expr, Procedure, Statement}};
 
 fn test_scratch() {
-    let json = scrapile::scratch::assemble(&Assembly {
+    let json = scrapile::scratch::assemble(Assembly {
         stmts: vec![
             Statement::PushList { ident: "console".to_string(), value: Expr::String("hello, world!".to_string()) },
             Statement::SetVar { ident: "myvar".to_string(), value: Expr::PosInteger(49) },
@@ -15,6 +15,22 @@ fn test_scratch() {
             Statement::PushList { ident: "console".to_string(), value: Expr::ListElement { ident: "mylist".to_string(), idx: Box::new(Expr::Integer(1)) } },
 
             Statement::PushList { ident: "console".to_string(), value: Expr::Add(Box::new(Expr::String("1nice".to_string())), Box::new(Expr::String("6".to_string()))) },
+
+            Statement::IfElse {
+                condition: Condition::EqualTo(Expr::String("false".to_string()), Expr::String("true".to_string())),
+                body: vec![
+                    Statement::PushList { ident: "console".to_string(), value:Expr::String("is true".to_string())  }
+                ],
+                otherwise: vec![
+                    Statement::PushList { ident: "console".to_string(), value:Expr::String("is false".to_string())  },
+                    Statement::If {
+                        condition: Condition::EqualTo(Expr::String("true".to_string()), Expr::String("true".to_string())),
+                        body: vec![
+                            Statement::PushList { ident: "console".to_string(), value: Expr::String("hello, world from an if statement!".to_string()) },
+                        ],
+                    },
+                ],
+            },
 
             Statement::CallProcedure { ident: "procedure".to_string() },
             Statement::CallProcedure { ident: "again".to_string() },
@@ -63,7 +79,7 @@ fn test_lang() {
     let assembly = targets::scratch::translate(project);
     println!("assembly: {assembly:?}");
 
-    let json = add_console("console", scrapile::scratch::assemble(&assembly));
+    let json = add_console("console", scrapile::scratch::assemble(assembly));
     scrapile::scratch::write_to_zip("project.sb3", json).unwrap();
 }
 
