@@ -69,7 +69,7 @@ fn throw_lang_error<T>(src: &str, src_id: &str, errors: &[impl Reportable]) -> T
 }
 
 fn test_lang() {
-    let src = fs::read_to_string(std::env::args().collect::<Vec<_>>()[1].clone()).unwrap();
+    let src = fs::read_to_string(std::env::args().collect::<Vec<_>>().get(1).expect("should be supplied with source code file").clone()).unwrap();
 
     let mut tokens = Token::lexer(&src).spanned();
     let roots = match parser::root::parse_root(&mut tokens) {

@@ -34,6 +34,36 @@ pub enum Error {
         value_type: Type,
     },
 
+    /// Occurs when you try to perform boolean operations on non-booleans
+    NotBoolean {
+        /// The span of the boolean operator
+        oper_span: Span,
+
+        /// The span of the non-bool
+        value_span: Span,
+
+        /// The type of the non-bool
+        value_type: Type,
+    },
+
+    /// Occurs when you try to perform an operation on two values of different types
+    OperationTypeMismatch {
+        /// The span of the lhs
+        lhs_span: Span,
+
+        /// The type of the lhs
+        lhs_type: Type,
+
+        /// The span of the operator
+        oper_span: Span,
+
+        /// The span of the rhs
+        rhs_span: Span,
+
+        /// The type of the rhs
+        rhs_type: Type,
+    },
+
     /// Occurs when you try to run a builtin function that doesn't exist
     BuiltinNotFound {
         /// The span of the builtin function ident
@@ -148,6 +178,7 @@ impl Reportable for Error {
         let (msg, span, label, ctx_span, ctx_label) = match self {
             E::ArithmeticNonNumber { oper_span, oper_type, value_span, value_type } => ("cannot perform mathmatical operations on non-number types", oper_span, format!("cannot perform an {oper_type} operation an expr of type `{value_type}`"), value_span, format!("expected an expr of type `num`, instead found an expr of type `{value_type}`")),
             E::ConcatNonString { oper_span, value_span, value_type } => ("cannot concatinate non-string types", oper_span, format!("cannot concat an expr of type `{value_type}`"), value_span, format!("expected an expr of type `str`, instead found an expr of type `{value_type}`")),
+            E::NotBoolean { oper_span, value_span, value_type } => ("cannot perform boolean operations on non-booleans", oper_span, format!("cannot perform bool-oper on an expr of type `{value_type}`"), value_span, format!("expected an expr of type `bool`, instead found an expr of type `{value_type}`")),
             E::BuiltinManyArgs { call_span, max, arg_span } => ("unexpected builtin-function argument (too many args)", arg_span, "unexpected argument".to_string(), call_span, format!("builtin-func only expected {max:?} args")),
             E::BuiltinLittleArgs { call_span, min } => ("expected a builtin-function argument (too little args)", &(call_span.end-1..call_span.end), "expected an argument".to_string(), call_span, format!("builtin-func expected {min:?} args")),
             E::BuiltinWrongType { call_span, expected, arg_type, arg_span } => ("builtin function's argument is of an incorrect type", arg_span, format!("expected an expr of type `{expected}`, instead found an expr of type `{arg_type}`",), call_span, "occured in this builtin-func call".to_string()),
@@ -186,6 +217,29 @@ impl Reportable for Error {
                             .with_color(Color::BrightBlue),
                     )
                     .with_help("available builtin-funcs include: 'println'")
+                    .finish()
+                    .eprint((src_id, Source::from(src)))
+                    .unwrap();
+            },
+
+            E::OperationTypeMismatch { lhs_span, lhs_type, oper_span, rhs_span, rhs_type } => {
+                return report
+                    .with_message("type mismatch between the left and right sides of an operation")
+                    .with_label(
+                        Label::new((src_id, lhs_span.clone()))
+                            .with_message(format!("expected a `{lhs_type}` due to the type of this expr"))
+                            .with_color(Color::BrightBlue),
+                    )
+                    .with_label(
+                        Label::new((src_id, oper_span.clone()))
+                            .with_message(format!("cannot operate upon two values of different types"))
+                            .with_color(Color::Red),
+                    )
+                    .with_label(
+                        Label::new((src_id, rhs_span.clone()))
+                            .with_message(format!("expected an expr of type `{lhs_type}`, instead found a value of type `{rhs_type}`"))
+                            .with_color(Color::BrightBlue),
+                    )
                     .finish()
                     .eprint((src_id, Source::from(src)))
                     .unwrap();

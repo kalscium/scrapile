@@ -8,6 +8,8 @@ main {
 
     let start_time = timer!(); # start a timer
 
+    let value: bool = 1 + 2 == 3 && 4 * 7 != 2 || 2;
+
     // here is the classic hello world
     println!("hello, world"); # identical syntax to rust, but a very different implementation
 

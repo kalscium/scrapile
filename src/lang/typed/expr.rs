@@ -19,14 +19,14 @@ pub enum TExpr {
     Pos(Box<Typed<Spanned<TExpr>>>),
     Not(Box<Typed<Spanned<TExpr>>>),
 
-    Or,
-    And,
-    EE,
-    NE,
-    GT,
-    LT,
-    GTE,
-    LTE,
+    Or(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>),
+    And(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>),
+    EE(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>),
+    NE(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>),
+    GT(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>),
+    LT(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>),
+    GTE(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>),
+    LTE(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>),
 
     Tuple(Vec<Typed<Spanned<TExpr>>>),
     Call(String, Vec<Typed<Spanned<TExpr>>>),
@@ -154,7 +154,7 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
             )
         },
 
-        // negative & positive
+        // negative & positive & not
         EO::Neg => {
             // wrap the sub-expr that this negates
             let (expr, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
@@ -205,6 +205,32 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
                         span, // span
                     ),
                     Type::Number, // type
+                ),
+                idx + 1, // idx (+1 as that's the offset given to the wrapper that produced it)
+            )
+        },
+        EO::Not => {
+            // wrap the sub-expr that this nots
+            let (expr, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+
+            // make sure it's a number, otherwise throw error
+            if expr.1 != Type::Bool {
+                return Err(Error::NotBoolean {
+                    oper_span: asa[0].info.span.clone(),
+                    value_span: expr.0.1,
+                    value_type: expr.1,
+                });
+            }
+
+            // return notted value
+            let expr_span = expr.0.1.clone();
+            (
+                (
+                    (
+                        TExpr::Not(Box::new(expr)), // value
+                        asa[0].info.span.start..expr_span.end, // span
+                    ),
+                    Type::Bool, // type
                 ),
                 idx + 1, // idx (+1 as that's the offset given to the wrapper that produced it)
             )
@@ -424,6 +450,255 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
                     var_type,
                 ),
                 0,
+            )
+        },
+
+        EO::EE => {
+            // wrap the left-hand side of this operation
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            // wrap the rigth-hand side of this operation
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, var_table)?;
+
+            // get the type of lhs and make sure it's the same as the rhs
+            if lhs.1 != rhs.1 {
+                return Err(Error::OperationTypeMismatch {
+                    lhs_span: lhs.0.1,
+                    lhs_type: lhs.1,
+                    oper_span: asa[0].info.span.clone(),
+                    rhs_span: rhs.0.1,
+                    rhs_type: rhs.1,
+                });
+            }
+
+            let span = lhs.0.1.start..rhs.0.1.end;
+            (
+                (
+                    (
+                        TExpr::EE(Box::new(lhs), Box::new(rhs)), // value
+                        span, // span
+                    ),
+                    Type::Bool, // type
+                ),
+                idx1 + idx + 2, // the current idx (accounting for offsets)
+            )
+        },
+        EO::NE => {
+            // wrap the left-hand side of this operation
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            // wrap the rigth-hand side of this operation
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, var_table)?;
+
+            // get the type of lhs and make sure it's the same as the rhs
+            if lhs.1 != rhs.1 {
+                return Err(Error::OperationTypeMismatch {
+                    lhs_span: lhs.0.1,
+                    lhs_type: lhs.1,
+                    oper_span: asa[0].info.span.clone(),
+                    rhs_span: rhs.0.1,
+                    rhs_type: rhs.1,
+                });
+            }
+
+            let span = lhs.0.1.start..rhs.0.1.end;
+            (
+                (
+                    (
+                        TExpr::NE(Box::new(lhs), Box::new(rhs)), // value
+                        span, // span
+                    ),
+                    Type::Bool, // type
+                ),
+                idx1 + idx + 2, // the current idx (accounting for offsets)
+            )
+        },
+        EO::GT => {
+            // wrap the left-hand side of this operation
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            // wrap the rigth-hand side of this operation
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, var_table)?;
+
+            // get the type of lhs and make sure it's the same as the rhs
+            if lhs.1 != rhs.1 {
+                return Err(Error::OperationTypeMismatch {
+                    lhs_span: lhs.0.1,
+                    lhs_type: lhs.1,
+                    oper_span: asa[0].info.span.clone(),
+                    rhs_span: rhs.0.1,
+                    rhs_type: rhs.1,
+                });
+            }
+
+            let span = lhs.0.1.start..rhs.0.1.end;
+            (
+                (
+                    (
+                        TExpr::GT(Box::new(lhs), Box::new(rhs)), // value
+                        span, // span
+                    ),
+                    Type::Bool, // type
+                ),
+                idx1 + idx + 2, // the current idx (accounting for offsets)
+            )
+        },
+        EO::LT => {
+            // wrap the left-hand side of this operation
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            // wrap the rigth-hand side of this operation
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, var_table)?;
+
+            // get the type of lhs and make sure it's the same as the rhs
+            if lhs.1 != rhs.1 {
+                return Err(Error::OperationTypeMismatch {
+                    lhs_span: lhs.0.1,
+                    lhs_type: lhs.1,
+                    oper_span: asa[0].info.span.clone(),
+                    rhs_span: rhs.0.1,
+                    rhs_type: rhs.1,
+                });
+            }
+
+            let span = lhs.0.1.start..rhs.0.1.end;
+            (
+                (
+                    (
+                        TExpr::LT(Box::new(lhs), Box::new(rhs)), // value
+                        span, // span
+                    ),
+                    Type::Bool, // type
+                ),
+                idx1 + idx + 2, // the current idx (accounting for offsets)
+            )
+        },
+        EO::GTE => {
+            // wrap the left-hand side of this operation
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            // wrap the rigth-hand side of this operation
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, var_table)?;
+
+            // get the type of lhs and make sure it's the same as the rhs
+            if lhs.1 != rhs.1 {
+                return Err(Error::OperationTypeMismatch {
+                    lhs_span: lhs.0.1,
+                    lhs_type: lhs.1,
+                    oper_span: asa[0].info.span.clone(),
+                    rhs_span: rhs.0.1,
+                    rhs_type: rhs.1,
+                });
+            }
+
+            let span = lhs.0.1.start..rhs.0.1.end;
+            (
+                (
+                    (
+                        TExpr::GTE(Box::new(lhs), Box::new(rhs)), // value
+                        span, // span
+                    ),
+                    Type::Bool, // type
+                ),
+                idx1 + idx + 2, // the current idx (accounting for offsets)
+            )
+        },
+        EO::LTE => {
+            // wrap the left-hand side of this operation
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            // wrap the rigth-hand side of this operation
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, var_table)?;
+
+            // get the type of lhs and make sure it's the same as the rhs
+            if lhs.1 != rhs.1 {
+                return Err(Error::OperationTypeMismatch {
+                    lhs_span: lhs.0.1,
+                    lhs_type: lhs.1,
+                    oper_span: asa[0].info.span.clone(),
+                    rhs_span: rhs.0.1,
+                    rhs_type: rhs.1,
+                });
+            }
+
+            let span = lhs.0.1.start..rhs.0.1.end;
+            (
+                (
+                    (
+                        TExpr::LTE(Box::new(lhs), Box::new(rhs)), // value
+                        span, // span
+                    ),
+                    Type::Bool, // type
+                ),
+                idx1 + idx + 2, // the current idx (accounting for offsets)
+            )
+        },
+        EO::And => {
+            // wrap the left-hand side of this operation
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            // wrap the rigth-hand side of this operation
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, var_table)?;
+
+            // make sure lhs is of type bool, otherwise throw error
+            if lhs.1 != Type::Bool {
+                return Err(Error::NotBoolean {
+                    oper_span: asa[0].info.span.clone(),
+                    value_span: lhs.0.1,
+                    value_type: lhs.1,
+                });
+            }
+
+            // make sure rhs is of type bool, otherwise throw error
+            if rhs.1 != Type::Bool {
+                return Err(Error::NotBoolean {
+                    oper_span: asa[0].info.span.clone(),
+                    value_span: rhs.0.1,
+                    value_type: rhs.1,
+                });
+            }
+
+            // return typed and operation
+            let span = lhs.0.1.start..rhs.0.1.end;
+            (
+                (
+                    (
+                        TExpr::And(Box::new(lhs), Box::new(rhs)), // value
+                        span, // span
+                    ),
+                    Type::Bool, // type
+                ),
+                idx1 + idx + 2, // the current idx (accounting for offsets)
+            )
+        },
+        EO::Or => {
+            // wrap the left-hand side of this operation
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            // wrap the rigth-hand side of this operation
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, var_table)?;
+
+            // make sure lhs is of type bool, otherwise throw error
+            if lhs.1 != Type::Bool {
+                return Err(Error::NotBoolean {
+                    oper_span: asa[0].info.span.clone(),
+                    value_span: lhs.0.1,
+                    value_type: lhs.1,
+                });
+            }
+
+            // make sure rhs is of type bool, otherwise throw error
+            if rhs.1 != Type::Bool {
+                return Err(Error::NotBoolean {
+                    oper_span: asa[0].info.span.clone(),
+                    value_span: rhs.0.1,
+                    value_type: rhs.1,
+                });
+            }
+
+            // return typed or operation
+            let span = lhs.0.1.start..rhs.0.1.end;
+            (
+                (
+                    (
+                        TExpr::Or(Box::new(lhs), Box::new(rhs)), // value
+                        span, // span
+                    ),
+                    Type::Bool, // type
+                ),
+                idx1 + idx + 2, // the current idx (accounting for offsets)
             )
         },
 
