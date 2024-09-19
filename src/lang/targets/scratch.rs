@@ -1,4 +1,4 @@
-use crate::{lang::typed::{expr::TExpr, root::Project, stmt::TStmt, types::Type}, scratch::{Assembly, Expr, Procedure, Statement}};
+use crate::{lang::typed::{expr::TExpr, root::Project, stmt::TStmt, types::Type}, scratch::{Assembly, Condition, Expr, Procedure, Statement}};
 
 /// Translates a project into scratch assembly
 pub fn translate(project: Project) -> Assembly {
@@ -85,6 +85,68 @@ pub fn tstmt(stmt: TStmt, stmts: &mut Vec<Statement>) {
             }
         },
     };
+}
+
+/// Translates a condition
+pub fn tcond(cond: TExpr, stmts: &mut Vec<Statement>) -> Condition {
+    match cond {
+        TExpr::EE(lhs, rhs) => {
+            let lhs = texpr(lhs.0.0, stmts);
+            let rhs = texpr(rhs.0.0, stmts);
+            Condition::EqualTo(lhs, rhs)
+        },
+        TExpr::NE(lhs, rhs) => {
+            let lhs = texpr(lhs.0.0, stmts);
+            let rhs = texpr(rhs.0.0, stmts);
+            Condition::Not(Box::new(Condition::EqualTo(lhs, rhs)))
+        },
+
+        TExpr::GT(lhs, rhs) => {
+            let lhs = texpr(lhs.0.0, stmts);
+            let rhs = texpr(rhs.0.0, stmts);
+            Condition::GreaterThan(lhs, rhs)
+        },
+        TExpr::LT(lhs, rhs) => {
+            let lhs = texpr(lhs.0.0, stmts);
+            let rhs = texpr(rhs.0.0, stmts);
+            Condition::LessThan(lhs, rhs)
+        },
+
+        TExpr::GTE(lhs, rhs) => {
+            let lhs = texpr(lhs.0.0, stmts);
+            let rhs = texpr(rhs.0.0, stmts);
+            Condition::Or(
+                Box::new(Condition::GreaterThan(lhs.clone(), rhs.clone())),
+                Box::new(Condition::EqualTo(lhs, rhs)),
+            )
+        },
+        TExpr::LTE(lhs, rhs) => {
+            let lhs = texpr(lhs.0.0, stmts);
+            let rhs = texpr(rhs.0.0, stmts);
+            Condition::Or(
+                Box::new(Condition::LessThan(lhs.clone(), rhs.clone())),
+                Box::new(Condition::EqualTo(lhs, rhs)),
+            )
+        },
+
+        TExpr::And(lhs, rhs) => {
+            let lhs = tcond(lhs.0.0, stmts);
+            let rhs = tcond(rhs.0.0, stmts);
+            Condition::And(Box::new(lhs), Box::new(rhs))
+        },
+        TExpr::Or(lhs, rhs) => {
+            let lhs = tcond(lhs.0.0, stmts);
+            let rhs = tcond(rhs.0.0, stmts);
+            Condition::Or(Box::new(lhs), Box::new(rhs))
+        },
+
+        TExpr::Not(cond) => {
+            let cond = tcond(cond.0.0, stmts);
+            Condition::Not(Box::new(cond))
+        },
+
+        _ => panic!("should be covered by the type system (must be valid)"),
+    }
 }
 
 /// Translates an expr
