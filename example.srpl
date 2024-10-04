@@ -8,8 +8,6 @@ main {
 
     let start_time = timer!(); # start a timer
 
-    let value: bool = 1 + 2 == 3 && 4 * 7 != 2 || 2;
-
     // here is the classic hello world
     println!("hello, world"); # identical syntax to rust, but a very different implementation
 
@@ -37,7 +35,7 @@ main {
 
     println!("here is a nil value cast to a string: " <> as_str!(nil_value));
 
-    panic!();
+    // panic!();
 
     # Now it's time to ask the user a question
     let mut username = input!("What's your first name?");
@@ -52,6 +50,11 @@ main {
     let mut list: [str] = ["hello", "there", "here", "is", "a", "list", "of", "strings"];
     mut list = ["nice"];
     println!("here is a list cast to a string: " <> as_str!(list));
+
+    // wow booleans
+    let boolean: bool = 1 + 2 == 3 && 4 * 7 != 2 || false;
+    let another_boolean: bool = !!boolean && true != false;
+    println!("Here's that boolean: " <> as_str!(another_boolean));
 
     # end the timer
     let end_time = timer!();

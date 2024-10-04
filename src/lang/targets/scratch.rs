@@ -90,6 +90,17 @@ pub fn tstmt(stmt: TStmt, stmts: &mut Vec<Statement>) {
 /// Translates a condition
 pub fn tcond(cond: TExpr, stmts: &mut Vec<Statement>) -> Condition {
     match cond {
+        TExpr::Bool(bool) => Condition::EqualTo(
+            if bool {
+                Expr::String("true".to_string())
+            } else {
+                Expr::String("false".to_string())
+            },
+            Expr::String("true".to_string()),
+        ),
+
+        TExpr::VarGet { ident, .. } => Condition::EqualTo(Expr::Variable { ident }, Expr::String("true".to_string())),
+
         TExpr::EE(lhs, rhs) => {
             let lhs = texpr(lhs.0.0, stmts);
             let rhs = texpr(rhs.0.0, stmts);
@@ -287,6 +298,18 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>) -> Expr {
 
         // Lists
         E::List(_, _) => Expr::String("<list>".to_string()),
+
+        // Conditions
+        E::Bool(bool) => Expr::Condition(Box::new(tcond(TExpr::Bool(bool), stmts))),
+        E::EE(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::EE(lhs, rhs), stmts))),
+        E::NE(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::NE(lhs, rhs), stmts))),
+        E::GT(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::GT(lhs, rhs), stmts))),
+        E::LT(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::LT(lhs, rhs), stmts))),
+        E::GTE(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::GTE(lhs, rhs), stmts))),
+        E::LTE(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::LTE(lhs, rhs), stmts))),
+        E::And(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::And(lhs, rhs), stmts))),
+        E::Or(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::Or(lhs, rhs), stmts))),
+        E::Not(cond) => Expr::Condition(Box::new(tcond(TExpr::Not(cond), stmts))),
 
         _ => todo!(),
     }

@@ -147,7 +147,7 @@ pub(super) fn parse_cond(cond: Condition, expr_blocks: &mut Vec<JsonValue>) -> J
         C::Not(cond) => {
             let cond = parse_cond(*cond, expr_blocks);
             let json = object! {
-                opcode: "operator_or",
+                opcode: "operator_not",
                 next: null,
                 parent: null,
                 inputs: {
