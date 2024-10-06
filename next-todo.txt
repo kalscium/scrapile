@@ -1,5 +1,5 @@
-- if statements
-- while loops
+- list builtins
+- += -= *= /=
 - function calls (basic, no recursion)
 - sized (and unsized) types
 - recursion support through some sort of state-saving through a function callback stack

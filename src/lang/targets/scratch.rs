@@ -110,6 +110,18 @@ pub fn tstmt(stmt: TStmt, stmts: &mut Vec<Statement>) {
             };
             stmts.push(stmt);
         },
+        TStmt::While { cond, body } => {
+            // translate the condition (not as there is only repeatuntil)
+            let cond = Condition::Not(Box::new(tcond(cond.0.0, stmts)));
+
+            // collect the body statements
+            let mut body_stmts = Vec::new();
+            tstmt(body.0, &mut body_stmts);
+
+            // return completed while statement
+            let stmt = Statement::RepeatUntil { condition: cond, body: body_stmts };
+            stmts.push(stmt);
+        },
     };
 }
 

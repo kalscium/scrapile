@@ -3,7 +3,7 @@ use logos::SpannedIter;
 use crate::lang::{error::parser::Error, parser::{expr::parse_expr, stmt::parse_stmt}, token::Token, Spanned};
 use super::stmt::Stmt;
 
-/// Parses an if-(else)? statement (given that the `if` token has alredy been consumed)
+/// Parses an if-(else)? statement (given that the `if` token has already been consumed)
 pub fn parse_if(tokens: &mut SpannedIter<'_, Token>) -> Result<(Spanned<Stmt>, Option<Spanned<Result<Token, Error>>>), Vec<KError<Error>>> {
     let start_span = tokens.span();
 
@@ -30,13 +30,13 @@ pub fn parse_if(tokens: &mut SpannedIter<'_, Token>) -> Result<(Spanned<Stmt>, O
     // check for else keyword
     if let Some((Ok(Token::Else), _)) = next {
         // get the else body
-        let (ifelse, next) = parse_stmt(tokens.next(), tokens)?;
+        let (otherwise, next) = parse_stmt(tokens.next(), tokens)?;
 
-        // return the completed ifelse statement
-        let span = start_span.start..ifelse.1.end;
+        // return the completed otherwise statement
+        let span = start_span.start..otherwise.1.end;
         return Ok((
             (
-                Stmt::If { cond, body: Box::new(body), otherwise: Some(Box::new(ifelse)) },
+                Stmt::If { cond, body: Box::new(body), otherwise: Some(Box::new(otherwise)) },
                 span,
             ),
             next,

@@ -47,9 +47,16 @@ main {
     println!("hello there " <> username <> "! nice to meet you!");
 
     // heres a list
-    let mut list: [str] = ["hello", "there", "here", "is", "a", "list", "of", "strings"];
-    mut list = ["nice"];
+    let mut list: [str] = ["nice"];
+    mut list = ["hello", "there", "here", "is", "a", "list", "of", "strings"];
     println!("here is a list cast to a string: " <> as_str!(list));
+
+    // lets iterate through that list
+    let mut i = 0;
+    while (i < 8) {
+        println!("item " <> as_str!(i) <> " of list: " <> "<replace later when list builtins are added>");
+        mut i = i + 1;
+    };
 
     // wow booleans
     let boolean: bool = 1 + 2 == 3 && 4 * 7 != 2 || false;

@@ -25,6 +25,12 @@ pub enum TStmt {
         body: Box<Typed<TStmt>>,
         otherwise: Option<Box<Typed<TStmt>>>,
     },
+
+    /// A while statement
+    While {
+        cond: Typed<Spanned<TExpr>>,
+        body: Box<Typed<TStmt>>,
+    },
 }
 
 /// Adds type annotations to a statement
@@ -86,7 +92,7 @@ pub fn wrap_stmt(stmt: Spanned<Stmt>, type_table: &TypeTable, var_table: &mut Va
                 Type::Nil,
             ))
         },
-        Stmt::If { cond, body, otherwise: ifelse } => {
+        Stmt::If { cond, body, otherwise } => {
             // wrap the condition
             let (cond, _) = wrap_expr(&cond.asa, type_table, var_table)?;
 
@@ -97,7 +103,7 @@ pub fn wrap_stmt(stmt: Spanned<Stmt>, type_table: &TypeTable, var_table: &mut Va
 
             // wrap the body and ifelse
             let body = wrap_stmt(*body, type_table, var_table)?;
-            let ifelse = match ifelse {
+            let ifelse = match otherwise {
                 Some(ifelse) => Some(Box::new(wrap_stmt(*ifelse, type_table, var_table)?)),
                 None => None,
             };
@@ -105,6 +111,24 @@ pub fn wrap_stmt(stmt: Spanned<Stmt>, type_table: &TypeTable, var_table: &mut Va
             // return valid if statement
             Ok((
                 TStmt::If { cond, body: Box::new(body), otherwise: ifelse },
+                Type::Nil,
+            ))
+        },
+        Stmt::While { cond, body } => {
+            // wrap the condition
+            let (cond, _) = wrap_expr(&cond.asa, type_table, var_table)?;
+
+            // make sure the condition is a boolean
+            if cond.1 != Type::Bool {
+                return Err(Error::NonBoolCond { span: cond.0.1, expr_type: cond.1, ctx_span: span });
+            }
+
+            // wrap the body
+            let body = wrap_stmt(*body, type_table, var_table)?;
+
+            // return valid while statement
+            Ok((
+                TStmt::While { cond, body: Box::new(body) },
                 Type::Nil,
             ))
         },
