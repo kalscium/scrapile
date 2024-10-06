@@ -1,0 +1,7 @@
+- if statements
+- while loops
+- function calls (basic, no recursion)
+- sized (and unsized) types
+- recursion support through some sort of state-saving through a function callback stack
+- expr if statements
+- expr while statements

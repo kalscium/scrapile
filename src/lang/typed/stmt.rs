@@ -18,6 +18,13 @@ pub enum TStmt {
         ident: String,
         value: Typed<Spanned<TExpr>>,
     },
+
+    /// An if statement
+    If {
+        cond: Typed<Spanned<TExpr>>,
+        body: Box<Typed<TStmt>>,
+        otherwise: Option<Box<Typed<TStmt>>>,
+    },
 }
 
 /// Adds type annotations to a statement
@@ -76,6 +83,28 @@ pub fn wrap_stmt(stmt: Spanned<Stmt>, type_table: &TypeTable, var_table: &mut Va
             // return completed variable declaration
             Ok((
                 TStmt::VarDeclare { ident: var_table.get_ident(&ident), value },
+                Type::Nil,
+            ))
+        },
+        Stmt::If { cond, body, otherwise: ifelse } => {
+            // wrap the condition
+            let (cond, _) = wrap_expr(&cond.asa, type_table, var_table)?;
+
+            // make sure the condition is a boolean
+            if cond.1 != Type::Bool {
+                return Err(Error::NonBoolCond { span: cond.0.1, expr_type: cond.1, ctx_span: span });
+            }
+
+            // wrap the body and ifelse
+            let body = wrap_stmt(*body, type_table, var_table)?;
+            let ifelse = match ifelse {
+                Some(ifelse) => Some(Box::new(wrap_stmt(*ifelse, type_table, var_table)?)),
+                None => None,
+            };
+
+            // return valid if statement
+            Ok((
+                TStmt::If { cond, body: Box::new(body), otherwise: ifelse },
                 Type::Nil,
             ))
         },

@@ -56,6 +56,17 @@ main {
     let another_boolean: bool = !!boolean && true != false;
     println!("Here's that boolean: " <> as_str!(another_boolean));
 
+    // nice if statements there
+    let is_working = 1 + 2 == 3 && 1 + 2 != 4;
+    if (is_working)
+        println!("YOOOOOOOO IT'S WORKING!!!!!!!")
+    else if (1 + 2 == 3)
+        println!("the first one works")
+    else {
+        println!("ohno, that's not good");
+        println!("allows for blocks");
+    };
+
     # end the timer
     let end_time = timer!();
     println!("program took " <> as_str!(end_time - start_time) <> "s to complete");

@@ -82,6 +82,12 @@ pub enum Error {
         /// The location of the statement
         ctx_span: Span,
     },
+
+    /// Occurs when an if statement doesn't have required parentheses around its condition
+    ExpectedCondLParen {
+        /// The location of the if or while statement
+        ctx_span: Span,
+    },
 }
 
 impl Reportable for KError<Error> {
@@ -117,6 +123,8 @@ impl Reportable for KError<Error> {
                 E::ExpectedEQ { ctx_span } => ("expected a `=` to define a value in variable assignment statement", span, "found this instead", ctx_span, "in this var assign statement"),
 
                 E::ExpectedIdent { ctx_span } => ("expected an identifier", span, "found this instead", ctx_span, "in this statement"),
+
+                E::ExpectedCondLParen { ctx_span } => ("expected `(` in 'if'/'while' statement condition", span, "try wrapping this in parentheses", ctx_span, "in this 'if'/'while' statement"),
             },
         };
 

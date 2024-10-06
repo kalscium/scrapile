@@ -84,6 +84,32 @@ pub fn tstmt(stmt: TStmt, stmts: &mut Vec<Statement>) {
                 stmts.push(stmt);
             }
         },
+        TStmt::If { cond, body, otherwise } => {
+            // translate the condition
+            let cond = tcond(cond.0.0, stmts);
+
+            // collect the body statements
+            let mut body_stmts = Vec::new();
+            tstmt(body.0, &mut body_stmts);
+
+            // collect the else statements if there are any
+            let otherwise_stmts = if let Some(otherwise) = otherwise {
+                let mut otherwise_stmts = Vec::new();
+                tstmt(otherwise.0, &mut otherwise_stmts);
+
+                Some(otherwise_stmts)
+            } else {
+                None
+            };
+
+            // if there's an else statement then return an ifelse otherwise a normal if
+            let stmt = if let Some(otherwise_stmts) = otherwise_stmts {
+                Statement::IfElse { condition: cond, body: body_stmts, otherwise: otherwise_stmts }
+            } else {
+                Statement::If { condition: cond, body: body_stmts }
+            };
+            stmts.push(stmt);
+        },
     };
 }
 

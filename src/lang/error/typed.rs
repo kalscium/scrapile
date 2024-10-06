@@ -167,6 +167,16 @@ pub enum Error {
         /// The type of the invalid element
         el_type: Type,
     },
+    
+    /// Occurs when you try to use a non-boolean expr as the condition for an 'if' or 'while' statement
+    NonBoolCond {
+        /// The span of the non-bool
+        span: Span,
+        /// The type of the non-bool
+        expr_type: Type,
+        /// The span of the 'if' or 'while' statement
+        ctx_span: Span,
+    },
 }
 
 impl Reportable for Error {
@@ -188,6 +198,7 @@ impl Reportable for Error {
             E::VarNotFound { span } => ("variable not found", span, "this variable was not found in the current scope".to_string(), span, "it may be a typo or otherwise consider adding a variable of that name".to_string()),
             E::AssignToImmutable { var_span, span } => ("assignment to an immutable variable", span, "invalid mutation to a variable that is immutable".to_string(), var_span, "variable declared here, consider adding the `mut` keyword after `let` to make it mutable".to_string()),
             E::ListElementTypeMismatch { first_span, first_type, el_span, el_type } => ("list element's type doesn't match the type of the list", el_span, format!("expected an element of type `{first_type}`, instead found an element of type `{el_type}`"), first_span, format!("list is of type `{first_type}` due to the first element's type")),
+            E::NonBoolCond { span, expr_type, ctx_span } => ("invalid non-boolean condition for 'if'/'while' statement", span, format!("expr is of type `{expr_type}`, expected an expr of type `bool`"), ctx_span, "part of this 'if' statement".to_string()),
 
             E::NoMain => {
                 return report

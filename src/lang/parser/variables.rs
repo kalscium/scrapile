@@ -4,7 +4,7 @@ use crate::lang::{error::parser::Error, parser::{expr::parse_expr, types::parse_
 use super::stmt::Stmt;
 
 /// Parses a variable mutation (given that the `Mut` token has already been consumed)
-pub fn parse_var_mutate(tokens: &mut SpannedIter<'_, Token>) -> Result<(Spanned<Stmt>, Option<(Result<Token, Error>, Span)>), Vec<KError<Error>>> {
+pub fn parse_var_mutate(tokens: &mut SpannedIter<'_, Token>) -> Result<(Spanned<Stmt>, Option<Spanned<Result<Token, Error>>>), Vec<KError<Error>>> {
     let start_span = tokens.span();
 
     // get the identifier of the variable mutation
