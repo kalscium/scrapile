@@ -152,7 +152,6 @@ fn get_tmp_binds_id(tmp_binds: usize) -> String { // might cause performance iss
 
 /// Translates a list (creates a temporary bind) and returns the name of that binding
 pub fn tlist(list: TExpr, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) -> String {
-    *tmp_binds += 1;
     match list {
         // if it's a variable just return the variable identifier
         TExpr::VarGet { ident, .. } => return ident,
@@ -321,6 +320,16 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) -> 
                     stmts.push(Statement::CallProcedure { ident: "$panic".to_string() });
 
                     Expr::String(NIL.to_string())
+                },
+
+                // list builtin-funcs
+
+                // convert the `list_len` builtin to it's scratch counterpart
+                B::ListLen(expr) => {
+                    // translate list to get-var
+                    let list = tlist(expr.0, stmts, tmp_binds);
+                    // return operation on that list
+                    Expr::ListLength { ident: list }
                 },
             }
         },

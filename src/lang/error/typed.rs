@@ -177,6 +177,16 @@ pub enum Error {
         /// The span of the 'if' or 'while' statement
         ctx_span: Span,
     },
+
+    /// Occurs when you pass a non-list argument to a list builtin
+    NonListBuiltin {
+        /// The span of the argument
+        span: Span,
+        /// The type of the argument
+        arg_type: Type,
+        /// The span of the builtin-call
+        call_span: Span,
+    },
 }
 
 impl Reportable for Error {
@@ -199,7 +209,8 @@ impl Reportable for Error {
             E::AssignToImmutable { var_span, span } => ("assignment to an immutable variable", span, "invalid mutation to a variable that is immutable".to_string(), var_span, "variable declared here, consider adding the `mut` keyword after `let` to make it mutable".to_string()),
             E::ListElementTypeMismatch { first_span, first_type, el_span, el_type } => ("list element's type doesn't match the type of the list", el_span, format!("expected an element of type `{first_type}`, instead found an element of type `{el_type}`"), first_span, format!("list is of type `{first_type}` due to the first element's type")),
             E::NonBoolCond { span, expr_type, ctx_span } => ("invalid non-boolean condition for 'if'/'while' statement", span, format!("expr is of type `{expr_type}`, expected an expr of type `bool`"), ctx_span, "part of this 'if' statement".to_string()),
-
+            E::NonListBuiltin { span, arg_type, call_span } => ("called list builtin-function on non-list", span, format!("expected a list, instead found an expr of type `{arg_type}`"), call_span, "in this list builtin-func call".to_string()),
+            
             E::NoMain => {
                 return report
                     .with_message("no main procedure found")

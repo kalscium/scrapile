@@ -10,6 +10,7 @@ pub enum TBuiltinFnCall {
     Input(Spanned<TExpr>),
     Timer,
     Panic(Span, Option<Spanned<TExpr>>),
+    ListLen(Spanned<TExpr>),
 }
 
 /// Add type annotations to builtin-function calls
@@ -20,6 +21,7 @@ pub fn wrap_builtin(ident: &str, ident_span: Span, span: Span, args: &[Expr], ty
         "input" => builtin_input(span, args, type_table, var_table),
         "timer" => builtin_timer(span, args),
         "panic" => builtin_panic(span, args, type_table, var_table),
+        "list_len" => builtin_list_len(span, args, type_table, var_table),
 
         // if the builtin function is not found, then return error
         _ => return Err(Error::BuiltinNotFound {
@@ -174,5 +176,38 @@ fn builtin_panic(span: Span, args: &[Expr], type_table: &TypeTable, var_table: &
     Ok((
         TBuiltinFnCall::Panic(span, Some(arg.0)),
         Type::Nil,
+    ))
+}
+
+/// Add type annotations to `list_len` builtin-function calls
+fn builtin_list_len(span: Span, args: &[Expr], type_table: &TypeTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
+    // make sure there's at least one argument
+    if args.len() < 1 {
+        return Err(Error::BuiltinLittleArgs {
+            call_span: span,
+            min: 1..2,
+        });
+    }
+
+    // make sure there's only one argument
+    if args.len() > 1 {
+        return Err(Error::BuiltinManyArgs {
+            call_span: span,
+            max: 0..2,
+            arg_span: args[1].span.clone(),
+        });
+    }
+
+    // wrap the expr and make sure it's of type list
+    let (expr, _) = wrap_expr(&args[0].asa, type_table, var_table)?;
+    match expr.1 {
+        Type::List(_) => (),
+        _ => return Err(Error::NonListBuiltin { span: expr.0.1, arg_type: expr.1, call_span: span }),
+    }
+
+    // return completed builtin-fn call
+    Ok((
+        TBuiltinFnCall::ListLen(expr.0),
+        Type::Number,
     ))
 }
