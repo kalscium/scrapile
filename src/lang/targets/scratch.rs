@@ -3,6 +3,7 @@ use crate::{lang::typed::{expr::TExpr, root::Project, stmt::TStmt, types::Type},
 /// Translates a project into scratch assembly
 pub fn translate(project: Project) -> Assembly {
     let mut stmts = vec![Statement::ClearList { ident: "console".to_string() }]; // first statement is to clear the console
+    let mut tmp_binds = 0; // temporary binding idx
 
     let procedures = vec![
         // panic
@@ -17,10 +18,10 @@ pub fn translate(project: Project) -> Assembly {
     
     // translate the main procedure's statements
     for stmt in project.main.0.stmts {
-        tstmt(stmt.0.0, &mut stmts);
+        tstmt(stmt.0.0, &mut stmts, &mut tmp_binds);
     }
     if let Some(stmt) = project.main.0.tail {
-        tstmt(stmt.0.0, &mut stmts);
+        tstmt(stmt.0.0, &mut stmts, &mut tmp_binds);
     }
 
     Assembly {
@@ -35,27 +36,36 @@ const NIL: &str = "<nil>";
 const PANIC_NAME: &str = "$panic$msg";
 
 /// Translates a statement
-pub fn tstmt(stmt: TStmt, stmts: &mut Vec<Statement>) {
+pub fn tstmt(stmt: TStmt, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) {
     match stmt {
-        TStmt::Expr(expr) => {texpr(expr, stmts);},
+        TStmt::Expr(expr) => {texpr(expr, stmts, tmp_binds);},
         TStmt::VarDeclare { ident, value } => {
             // if it's a list then declare the list by making an empty list then setting all the values in it
             if let Type::List(_) = value.1 {
-                // pull the expressions from the list
-                let exprs = match value.0.0 {
-                    TExpr::List(_, exprs) => exprs,
-                    TExpr::VarGet { .. } => panic!("todo: need to implement loops first"),
-                    _ => unreachable!(),
-                };
+                // translate the list to a var-get
+                let list = tlist(value.0.0, stmts, tmp_binds);
 
-                // iterate through the exprs and add them to the list
-                for (i, expr) in exprs.into_iter().enumerate() {
-                    let expr = texpr(expr.0, stmts);
-                    let stmt = Statement::InsertList { ident: ident.clone(), value: expr, idx:Expr::PosInteger(i as u32 + 1)  };
-                    stmts.push(stmt);
-                }
+                // generate a temporary binding for the loop index
+                *tmp_binds += 1;
+                let loop_idx = get_tmp_binds_id(*tmp_binds);
+                stmts.push(Statement::SetVar { ident: loop_idx.clone(), value: Expr::PosInteger(0) });
+                
+                // loop through the list and append the elements
+                stmts.push(Statement::RepeatUntil {
+                    // make sure it's within the bounds of the list
+                    condition: Condition::Not(Box::new(Condition::LessThan(Expr::Variable { ident: loop_idx.clone() }, Expr::ListLength { ident: list.clone() }))),
+                    body: vec![
+                        // push the list element to the new list
+                        Statement::PushList {
+                            ident,
+                            value: Expr::ListElement { ident: list, idx: Box::new(Expr::Variable { ident: loop_idx.clone() }) },
+                        },
+                        // update the index
+                        Statement::SetVar { ident: loop_idx.clone(), value: Expr::Add(Box::new(Expr::Variable { ident: loop_idx }), Box::new(Expr::PosInteger(1))) },
+                    ],
+                })
             } else {
-                let stmt = Statement::SetVar { ident, value: texpr(value.0.0, stmts) };
+                let stmt = Statement::SetVar { ident, value: texpr(value.0.0, stmts, tmp_binds) };
                 stmts.push(stmt);
             }
             
@@ -65,37 +75,46 @@ pub fn tstmt(stmt: TStmt, stmts: &mut Vec<Statement>) {
             if let Type::List(_) = value.1 {
                 // clear the list first
                 stmts.push(Statement::ClearList { ident: ident.clone() });
-                
-                // pull the expressions from the list
-                let exprs = match value.0.0 {
-                    TExpr::List(_, exprs) => exprs,
-                    TExpr::VarGet { .. } => panic!("todo: need to implement loops first"),
-                    _ => unreachable!()
-                };
 
-                // iterate through the exprs and add them to the list
-                for (i, expr) in exprs.into_iter().enumerate() {
-                    let expr = texpr(expr.0, stmts);
-                    let stmt = Statement::InsertList { ident: ident.clone(), value: expr, idx:Expr::PosInteger(i as u32 + 1)  };
-                    stmts.push(stmt);
-                }
+                // translate the list to a var-get
+                let list = tlist(value.0.0, stmts, tmp_binds);
+
+                // generate a temporary binding for the loop index
+                *tmp_binds += 1;
+                let loop_idx = get_tmp_binds_id(*tmp_binds);
+                stmts.push(Statement::SetVar { ident: loop_idx.clone(), value: Expr::PosInteger(0) });
+                
+                // loop through the list and append the elements
+                stmts.push(Statement::RepeatUntil {
+                    // make sure it's within the bounds of the list
+                    condition: Condition::Not(Box::new(Condition::LessThan(Expr::Variable { ident: loop_idx.clone() }, Expr::ListLength { ident: list.clone() }))),
+                    body: vec![
+                        // push the list element to the new list
+                        Statement::PushList {
+                            ident,
+                            value: Expr::ListElement { ident: list, idx: Box::new(Expr::Variable { ident: loop_idx.clone() }) },
+                        },
+                        // update the index
+                        Statement::SetVar { ident: loop_idx.clone(), value: Expr::Add(Box::new(Expr::Variable { ident: loop_idx }), Box::new(Expr::PosInteger(1))) },
+                    ],
+                })
             } else {
-                let stmt = Statement::SetVar { ident, value: texpr(value.0.0, stmts) };
+                let stmt = Statement::SetVar { ident, value: texpr(value.0.0, stmts, tmp_binds) };
                 stmts.push(stmt);
             }
         },
         TStmt::If { cond, body, otherwise } => {
             // translate the condition
-            let cond = tcond(cond.0.0, stmts);
+            let cond = tcond(cond.0.0, stmts, tmp_binds);
 
             // collect the body statements
             let mut body_stmts = Vec::new();
-            tstmt(body.0, &mut body_stmts);
+            tstmt(body.0, &mut body_stmts, tmp_binds);
 
             // collect the else statements if there are any
             let otherwise_stmts = if let Some(otherwise) = otherwise {
                 let mut otherwise_stmts = Vec::new();
-                tstmt(otherwise.0, &mut otherwise_stmts);
+                tstmt(otherwise.0, &mut otherwise_stmts, tmp_binds);
 
                 Some(otherwise_stmts)
             } else {
@@ -112,11 +131,11 @@ pub fn tstmt(stmt: TStmt, stmts: &mut Vec<Statement>) {
         },
         TStmt::While { cond, body } => {
             // translate the condition (not as there is only repeatuntil)
-            let cond = Condition::Not(Box::new(tcond(cond.0.0, stmts)));
+            let cond = Condition::Not(Box::new(tcond(cond.0.0, stmts, tmp_binds)));
 
             // collect the body statements
             let mut body_stmts = Vec::new();
-            tstmt(body.0, &mut body_stmts);
+            tstmt(body.0, &mut body_stmts, tmp_binds);
 
             // return completed while statement
             let stmt = Statement::RepeatUntil { condition: cond, body: body_stmts };
@@ -125,8 +144,41 @@ pub fn tstmt(stmt: TStmt, stmts: &mut Vec<Statement>) {
     };
 }
 
+/// Get a unique var name from a temporary bindings index
+#[inline]
+fn get_tmp_binds_id(tmp_binds: usize) -> String { // might cause performance issues where there are too many variables and lists
+    format!("%{tmp_binds}")
+}
+
+/// Translates a list (creates a temporary bind) and returns the name of that binding
+pub fn tlist(list: TExpr, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) -> String {
+    *tmp_binds += 1;
+    match list {
+        // if it's a variable just return the variable identifier
+        TExpr::VarGet { ident, .. } => return ident,
+        // literal list
+        TExpr::List(_, exprs) => {
+            // generate a new temporary binding index
+            *tmp_binds += 1;
+            let ident = get_tmp_binds_id(*tmp_binds);
+
+            // iterate through the exprs and add them to the list
+            for (i, expr) in exprs.into_iter().enumerate() {
+                let expr = texpr(expr.0, stmts, tmp_binds);
+                let stmt = Statement::InsertList { ident: ident.clone(), value: expr, idx:Expr::PosInteger(i as u32 + 1)  };
+                stmts.push(stmt);
+            }
+
+            ident
+        },
+
+        // no support for anything else yet
+        _ => todo!(),
+    }
+}
+
 /// Translates a condition
-pub fn tcond(cond: TExpr, stmts: &mut Vec<Statement>) -> Condition {
+pub fn tcond(cond: TExpr, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) -> Condition {
     match cond {
         TExpr::Bool(bool) => Condition::EqualTo(
             if bool {
@@ -140,38 +192,38 @@ pub fn tcond(cond: TExpr, stmts: &mut Vec<Statement>) -> Condition {
         TExpr::VarGet { ident, .. } => Condition::EqualTo(Expr::Variable { ident }, Expr::String("true".to_string())),
 
         TExpr::EE(lhs, rhs) => {
-            let lhs = texpr(lhs.0.0, stmts);
-            let rhs = texpr(rhs.0.0, stmts);
+            let lhs = texpr(lhs.0.0, stmts, tmp_binds);
+            let rhs = texpr(rhs.0.0, stmts, tmp_binds);
             Condition::EqualTo(lhs, rhs)
         },
         TExpr::NE(lhs, rhs) => {
-            let lhs = texpr(lhs.0.0, stmts);
-            let rhs = texpr(rhs.0.0, stmts);
+            let lhs = texpr(lhs.0.0, stmts, tmp_binds);
+            let rhs = texpr(rhs.0.0, stmts, tmp_binds);
             Condition::Not(Box::new(Condition::EqualTo(lhs, rhs)))
         },
 
         TExpr::GT(lhs, rhs) => {
-            let lhs = texpr(lhs.0.0, stmts);
-            let rhs = texpr(rhs.0.0, stmts);
+            let lhs = texpr(lhs.0.0, stmts, tmp_binds);
+            let rhs = texpr(rhs.0.0, stmts, tmp_binds);
             Condition::GreaterThan(lhs, rhs)
         },
         TExpr::LT(lhs, rhs) => {
-            let lhs = texpr(lhs.0.0, stmts);
-            let rhs = texpr(rhs.0.0, stmts);
+            let lhs = texpr(lhs.0.0, stmts, tmp_binds);
+            let rhs = texpr(rhs.0.0, stmts, tmp_binds);
             Condition::LessThan(lhs, rhs)
         },
 
         TExpr::GTE(lhs, rhs) => {
-            let lhs = texpr(lhs.0.0, stmts);
-            let rhs = texpr(rhs.0.0, stmts);
+            let lhs = texpr(lhs.0.0, stmts, tmp_binds);
+            let rhs = texpr(rhs.0.0, stmts, tmp_binds);
             Condition::Or(
                 Box::new(Condition::GreaterThan(lhs.clone(), rhs.clone())),
                 Box::new(Condition::EqualTo(lhs, rhs)),
             )
         },
         TExpr::LTE(lhs, rhs) => {
-            let lhs = texpr(lhs.0.0, stmts);
-            let rhs = texpr(rhs.0.0, stmts);
+            let lhs = texpr(lhs.0.0, stmts, tmp_binds);
+            let rhs = texpr(rhs.0.0, stmts, tmp_binds);
             Condition::Or(
                 Box::new(Condition::LessThan(lhs.clone(), rhs.clone())),
                 Box::new(Condition::EqualTo(lhs, rhs)),
@@ -179,18 +231,18 @@ pub fn tcond(cond: TExpr, stmts: &mut Vec<Statement>) -> Condition {
         },
 
         TExpr::And(lhs, rhs) => {
-            let lhs = tcond(lhs.0.0, stmts);
-            let rhs = tcond(rhs.0.0, stmts);
+            let lhs = tcond(lhs.0.0, stmts, tmp_binds);
+            let rhs = tcond(rhs.0.0, stmts, tmp_binds);
             Condition::And(Box::new(lhs), Box::new(rhs))
         },
         TExpr::Or(lhs, rhs) => {
-            let lhs = tcond(lhs.0.0, stmts);
-            let rhs = tcond(rhs.0.0, stmts);
+            let lhs = tcond(lhs.0.0, stmts, tmp_binds);
+            let rhs = tcond(rhs.0.0, stmts, tmp_binds);
             Condition::Or(Box::new(lhs), Box::new(rhs))
         },
 
         TExpr::Not(cond) => {
-            let cond = tcond(cond.0.0, stmts);
+            let cond = tcond(cond.0.0, stmts, tmp_binds);
             Condition::Not(Box::new(cond))
         },
 
@@ -199,7 +251,7 @@ pub fn tcond(cond: TExpr, stmts: &mut Vec<Statement>) -> Condition {
 }
 
 /// Translates an expr
-pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>) -> Expr {
+pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) -> Expr {
     
     use TExpr as E;
     match expr {
@@ -212,12 +264,12 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>) -> Expr {
         E::Block(block) => {
             // append all of the block's statements
             for ((stmt, _), _) in block.stmts {
-                tstmt(stmt, stmts);
+                tstmt(stmt, stmts, tmp_binds);
             }
 
             // return tail statement
             match block.tail {
-                Some(((TStmt::Expr(tail), _), _)) => texpr(tail, stmts),
+                Some(((TStmt::Expr(tail), _), _)) => texpr(tail, stmts, tmp_binds),
                 _ => Expr::String("<nil>".to_string()),
             }
         },
@@ -227,11 +279,11 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>) -> Expr {
             use crate::lang::typed::builtin::TBuiltinFnCall as B;
             match *call {
                 // convert the `as_str` builtin to it's scratch counterpart
-                B::AsString((expr, _)) => texpr(expr, stmts),
+                B::AsString((expr, _)) => texpr(expr, stmts, tmp_binds),
 
                 // convert the `input` builtin to it's scratch counterpart
                 B::Input((expr, _)) => {
-                    let prompt = texpr(expr, stmts);
+                    let prompt = texpr(expr, stmts, tmp_binds);
                     stmts.push(Statement::Ask { prompt });
                     Expr::Answer
                 },
@@ -242,7 +294,7 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>) -> Expr {
                 // convert the `println` builtin to it's scratch counterpart
                 B::PrintLn(args) => {
                     let stmt = match args {
-                        Some((expr, _)) => Statement::PushList { ident: "console".to_string(), value: texpr(expr, stmts) },
+                        Some((expr, _)) => Statement::PushList { ident: "console".to_string(), value: texpr(expr, stmts, tmp_binds) },
                         None => Statement::PushList { ident: "console".to_string(), value: Expr::String(String::new()) },
                     };
 
@@ -253,7 +305,7 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>) -> Expr {
                 // convert the `panic` builtin to it's scratch ounterpart
                 B::Panic(span, arg) => {
                     let arg = match arg {
-                        Some(arg) => texpr(arg.0, stmts),
+                        Some(arg) => texpr(arg.0, stmts, tmp_binds),
                         None => Expr::String("explicit panic".to_string()),
                     };
 
@@ -277,16 +329,16 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>) -> Expr {
         E::Concat(lhs, rhs) => {
             let (((lhs, _), _), ((rhs, _), _)) = (*lhs, *rhs);
 
-            let lhs = texpr(lhs, stmts);
-            let rhs = texpr(rhs, stmts);
+            let lhs = texpr(lhs, stmts, tmp_binds);
+            let rhs = texpr(rhs, stmts, tmp_binds);
 
             Expr::Concat(Box::new(lhs), Box::new(rhs))
         },
 
         // maths single-space
-        E::Pos(expr) => texpr(expr.0.0, stmts),
+        E::Pos(expr) => texpr(expr.0.0, stmts, tmp_binds),
         E::Neg(expr) => Expr::Mul(
-            Box::new(texpr(expr.0.0, stmts)),
+            Box::new(texpr(expr.0.0, stmts, tmp_binds)),
             Box::new(Expr::Integer(-1)),
         ),
 
@@ -294,32 +346,32 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>) -> Expr {
         E::Add(lhs, rhs) => {
             let (((lhs, _), _), ((rhs, _), _)) = (*lhs, *rhs);
 
-            let lhs = texpr(lhs, stmts);
-            let rhs = texpr(rhs, stmts);
+            let lhs = texpr(lhs, stmts, tmp_binds);
+            let rhs = texpr(rhs, stmts, tmp_binds);
 
             Expr::Add(Box::new(lhs), Box::new(rhs))
         },
         E::Sub(lhs, rhs) => {
             let (((lhs, _), _), ((rhs, _), _)) = (*lhs, *rhs);
 
-            let lhs = texpr(lhs, stmts);
-            let rhs = texpr(rhs, stmts);
+            let lhs = texpr(lhs, stmts, tmp_binds);
+            let rhs = texpr(rhs, stmts, tmp_binds);
 
             Expr::Sub(Box::new(lhs), Box::new(rhs))
         },
         E::Mul(lhs, rhs) => {
             let (((lhs, _), _), ((rhs, _), _)) = (*lhs, *rhs);
 
-            let lhs = texpr(lhs, stmts);
-            let rhs = texpr(rhs, stmts);
+            let lhs = texpr(lhs, stmts, tmp_binds);
+            let rhs = texpr(rhs, stmts, tmp_binds);
 
             Expr::Mul(Box::new(lhs), Box::new(rhs))
         },
         E::Div(lhs, rhs) => {
             let (((lhs, _), _), ((rhs, _), _)) = (*lhs, *rhs);
 
-            let lhs = texpr(lhs, stmts);
-            let rhs = texpr(rhs, stmts);
+            let lhs = texpr(lhs, stmts, tmp_binds);
+            let rhs = texpr(rhs, stmts, tmp_binds);
 
             Expr::Div(Box::new(lhs), Box::new(rhs))
         },
@@ -338,16 +390,16 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>) -> Expr {
         E::List(_, _) => Expr::String("<list>".to_string()),
 
         // Conditions
-        E::Bool(bool) => Expr::Condition(Box::new(tcond(TExpr::Bool(bool), stmts))),
-        E::EE(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::EE(lhs, rhs), stmts))),
-        E::NE(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::NE(lhs, rhs), stmts))),
-        E::GT(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::GT(lhs, rhs), stmts))),
-        E::LT(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::LT(lhs, rhs), stmts))),
-        E::GTE(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::GTE(lhs, rhs), stmts))),
-        E::LTE(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::LTE(lhs, rhs), stmts))),
-        E::And(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::And(lhs, rhs), stmts))),
-        E::Or(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::Or(lhs, rhs), stmts))),
-        E::Not(cond) => Expr::Condition(Box::new(tcond(TExpr::Not(cond), stmts))),
+        E::Bool(bool) => Expr::Condition(Box::new(tcond(TExpr::Bool(bool), stmts, tmp_binds))),
+        E::EE(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::EE(lhs, rhs), stmts, tmp_binds))),
+        E::NE(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::NE(lhs, rhs), stmts, tmp_binds))),
+        E::GT(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::GT(lhs, rhs), stmts, tmp_binds))),
+        E::LT(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::LT(lhs, rhs), stmts, tmp_binds))),
+        E::GTE(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::GTE(lhs, rhs), stmts, tmp_binds))),
+        E::LTE(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::LTE(lhs, rhs), stmts, tmp_binds))),
+        E::And(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::And(lhs, rhs), stmts, tmp_binds))),
+        E::Or(lhs, rhs) => Expr::Condition(Box::new(tcond(TExpr::Or(lhs, rhs), stmts, tmp_binds))),
+        E::Not(cond) => Expr::Condition(Box::new(tcond(TExpr::Not(cond), stmts, tmp_binds))),
 
         _ => todo!(),
     }
