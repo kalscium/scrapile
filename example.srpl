@@ -52,6 +52,7 @@ main {
     println!("here is a list cast to a string: " <> as_str!(list));
     
     // lets find the length of a list
+    list_len!("nice");
     println!("wow, the list before had " <> as_str!(list_len!(list)) <> " items");
     println!("here's a list's length without a variable: " <> as_str!(list_len!(["there", "will be", "four items", "in this list"])));
 

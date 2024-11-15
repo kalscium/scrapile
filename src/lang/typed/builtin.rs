@@ -185,7 +185,7 @@ fn builtin_list_len(span: Span, args: &[Expr], type_table: &TypeTable, var_table
     if args.len() < 1 {
         return Err(Error::BuiltinLittleArgs {
             call_span: span,
-            min: 1..2,
+            min: 0..1,
         });
     }
 
@@ -193,7 +193,7 @@ fn builtin_list_len(span: Span, args: &[Expr], type_table: &TypeTable, var_table
     if args.len() > 1 {
         return Err(Error::BuiltinManyArgs {
             call_span: span,
-            max: 0..2,
+            max: 0..1,
             arg_span: args[1].span.clone(),
         });
     }
@@ -202,7 +202,12 @@ fn builtin_list_len(span: Span, args: &[Expr], type_table: &TypeTable, var_table
     let (expr, _) = wrap_expr(&args[0].asa, type_table, var_table)?;
     match expr.1 {
         Type::List(_) => (),
-        _ => return Err(Error::NonListBuiltin { span: expr.0.1, arg_type: expr.1, call_span: span }),
+        _ => return Err(Error::BuiltinArgTypeMismatch {
+            span: expr.0.1,
+            param_type: Type::List(Box::new(expr.1.clone())),
+            arg_type: expr.1,
+            call_span: span,
+        }),
     }
 
     // return completed builtin-fn call
