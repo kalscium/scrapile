@@ -31,7 +31,7 @@ pub fn parse_var_mutate(tokens: &mut SpannedIter<'_, Token>) -> Result<(Spanned<
     Ok(((Stmt::VarMutate { ident, value }, span), next_tok.map(|(tok, span)| (Ok(tok), span))))
 }
 
-/// Parses variable delcaration / definition (given that the `Let` token has already been consumed)
+/// Parses variable delcaration / definition (given that the `Var` token has already been consumed)
 pub fn parse_var_declare(tokens: &mut SpannedIter<'_, Token>) -> Result<(Spanned<Stmt>, Option<(Result<Token, Error>, Span)>), Vec<KError<Error>>> {
     let start_span = tokens.span();
 

@@ -44,7 +44,7 @@ pub fn parse_stmt(first_tok: Option<Spanned<Result<Token, Error>>>, tokens: &mut
     };
 
     match first_tok {
-        Token::Let => parse_var_declare(tokens),
+        Token::Var => parse_var_declare(tokens),
         Token::Mut => parse_var_mutate(tokens),
         Token::If => parse_if(tokens),
         Token::While => parse_while(tokens),

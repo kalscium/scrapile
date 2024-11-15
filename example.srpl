@@ -6,23 +6,23 @@ main {
         Stuff that isn't printed to the screen or setting variables (expressions) are getting filtered out
     */
 
-    let start_time = timer!(); # start a timer
+    var start_time = timer!(); # start a timer
 
     // here is the classic hello world
     println!("hello, world"); # identical syntax to rust, but a very different implementation
 
     // now here is some maths *and also variables*
-    let maths: num = 1 + 2 / 3 * 96 - -5;
+    var maths: num = 1 + 2 / 3 * 96 - -5;
     println!("here's the output of the maths: " <> as_str!(maths)); # string concatination
     # casting to a string is alos demonstrated
 
     // blocks are nice
-    let block_msg: str = {
-        let maths = 99 / (1 + 2);
+    var block_msg: str = {
+        var maths = 99 / (1 + 2);
 
-        let message = {
+        var message = {
             println!("here is a deeply nested block");
-            let message = "blocks are nice, here's some more maths: " <> as_str!(maths);
+            var message = "blocks are nice, here's some more maths: " <> as_str!(maths);
             message
         };
         
@@ -31,23 +31,23 @@ main {
 
     println!(block_msg); // print the block message
 
-    let nil_value: nil = ();
+    var nil_value: nil = ();
 
     println!("here is a nil value cast to a string: " <> as_str!(nil_value));
 
     // panic!();
 
     # Now it's time to ask the user a question
-    let mut username = input!("What's your first name?");
+    var mut username = input!("What's your first name?");
 
-    # Lets mutate it
+    # lets mutate it
     mut username = username <> " " <> input!("What's your last name?");
     
-    // Lets print the greeting
+    // lets print the greeting
     println!("hello there " <> username <> "! nice to meet you!");
 
     // heres a list
-    let mut list: [str] = ["nice"];
+    var mut list: [str] = ["nice"];
     mut list = ["hello", "there", "here", "is", "a", "list", "of", "strings"];
     println!("here is a list cast to a string: " <> as_str!(list));
     
@@ -56,19 +56,19 @@ main {
     println!("here's a list's length without a variable: " <> as_str!(list_len!(["there", "will be", "four items", "in this list"])));
 
     // lets iterate through that list
-    let mut i = 0;
+    var mut i = 0;
     while (i < list_len!(list)) {
         println!("item " <> as_str!(i) <> " of list: " <> "<replace later when list builtins are added>");
         mut i = i + 1;
     };
 
     // wow booleans
-    let boolean: bool = 1 + 2 == 3 && 4 * 7 != 2 || false;
-    let another_boolean: bool = !!boolean && true != false;
+    var boolean: bool = 1 + 2 == 3 && 4 * 7 != 2 || false;
+    var another_boolean: bool = !!boolean && true != false;
     println!("Here's that boolean: " <> as_str!(another_boolean));
 
     // nice if statements there
-    let is_working = 1 + 2 == 3 && 1 + 2 != 4;
+    var is_working = 1 + 2 == 3 && 1 + 2 != 4;
     if (is_working)
         println!("YOOOOOOOO IT'S WORKING!!!!!!!")
     else if (1 + 2 == 3)
@@ -79,6 +79,6 @@ main {
     };
 
     # end the timer
-    let end_time = timer!();
-    println!("program took " <> as_str!(end_time - start_time) <> "s to complete");
+    var end_time = timer!();
+    println!("program took " <> as_str!(end_time - start_time) <> "s to compvare");
 }

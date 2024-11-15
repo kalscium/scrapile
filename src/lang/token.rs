@@ -87,8 +87,8 @@ pub enum Token {
     BuiltinFunc(String),
     #[token("main")]
     Main,
-    #[token("let")]
-    Let,
+    #[token("var")]
+    Var,
     #[token("mut")]
     Mut,
     #[token("if")]

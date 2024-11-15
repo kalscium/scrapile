@@ -2,6 +2,7 @@
 - += -= *= /=
 - function calls (basic, no recursion)
 - sized (and unsized) types
+- stack implementation with global stack pointers and local stack offsets
 - recursion support through some sort of state-saving through a function callback stack
 - expr if statements
 - expr while statements
