@@ -311,7 +311,7 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) -> 
                     // set the panic message
                     stmts.push(Statement::SetVar { ident: PANIC_NAME.to_string(), value: {
                         Expr::Concat(
-                            Box::new(Expr::String(format!("panic at <{span:?}>: "))),
+                            Box::new(Expr::String(format!("explicit panic at <{span:?}>: "))),
                             Box::new(arg),
                         )
                     } });
@@ -333,16 +333,58 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) -> 
                 },
 
                 // convert the `list_get` builtin to it's scratch counterpart
-                B::ListGet { list, idx } => {
+                B::ListGet { span, list, idx } => {
                     // translate list to get-var
                     let list = tlist(list.0, stmts, tmp_binds);
                     
                     // translate the list idx (+1 due to their lists indexs starting at 1 instead of 0)
                     let idx = texpr(idx.0, stmts, tmp_binds);
-                    let idx = Expr::Add(Box::new(idx), Box::new(Expr::PosInteger(1)));
+                    let idx_plus = Expr::Add(Box::new(idx.clone()), Box::new(Expr::PosInteger(1)));
+
+                    // add bounds checking statement (negative)
+                    stmts.push(Statement::If {
+                        condition: Condition::LessThan(
+                            idx.clone(),
+                            Expr::PosInteger(0),
+                        ),
+                        body: vec![
+                            Statement::SetVar {
+                                ident: PANIC_NAME.to_string(),
+                                value: Expr::Concat(
+                                    Box::new(Expr::String(format!("panic at <{span:?}>: index cannot be negative: idx: "))),
+                                    Box::new(idx.clone()),
+                                ),
+                            },
+                            Statement::CallProcedure { ident: "$panic".to_string() }
+                        ],
+                    });
+
+                    // add bounds checking statement (larger than length)
+                    stmts.push(Statement::If {
+                        condition: Condition::GreaterThan(
+                            idx_plus.clone(),
+                            Expr::ListLength { ident: list.clone() },
+                        ),
+                        body: vec![
+                            Statement::SetVar { // the pain of formatting a string in scratch
+                                ident: PANIC_NAME.to_string(),
+                                value: Expr::Concat(
+                                    Box::new(Expr::Concat(
+                                        Box::new(Expr::Concat(
+                                            Box::new(Expr::String(format!("panic at <{span:?}>: index out of bounds: len is "))),
+                                            Box::new(Expr::ListLength { ident: list.clone() }),
+                                        )),
+                                        Box::new(Expr::String(" but the index is ".to_string())),
+                                    )),
+                                    Box::new(idx),
+                                ),
+                            },
+                            Statement::CallProcedure { ident: "$panic".to_string() }
+                        ],
+                    });
 
                     // return operation on that list
-                    Expr::ListElement { ident: list, idx: Box::new(idx) }
+                    Expr::ListElement { ident: list, idx: Box::new(idx_plus) }
                 },
             }
         },

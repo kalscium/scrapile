@@ -62,6 +62,12 @@ main {
         mut i = i + 1;
     };
 
+    // lets try an 'out of bounds' list index
+    # var this_will_panic: str = list_get!(list, 14);
+    var this_will_also_panic: nil = {
+        list_get!(list, -1);
+    };
+
     // wow booleans
     var boolean: bool = 1 + 2 == 3 && 4 * 7 != 2 || false;
     var another_boolean: bool = !!boolean && true != false;

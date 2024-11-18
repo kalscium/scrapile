@@ -12,6 +12,7 @@ pub enum TBuiltinFnCall {
     Panic(Span, Option<Spanned<TExpr>>),
     ListLen(Spanned<TExpr>),
     ListGet {
+        span: Span,
         list: Spanned<TExpr>,
         idx: Spanned<TExpr>,
     },
@@ -270,6 +271,7 @@ fn builtin_list_get(span: Span, args: &[Expr], type_table: &TypeTable, var_table
     // return completed builtin-fn call
     Ok((
         TBuiltinFnCall::ListGet {
+            span,
             list: list_expr.0,
             idx: idx_expr.0,
         },
