@@ -1,5 +1,8 @@
+- fix precedence definition for ketchup (mine is inversed)
 - list builtins
 - += -= *= /=
+- write basic tree-sitter
+- rewrite the spans to include the filename, also allow for inclusion of other files
 - function calls (basic, no recursion)
 - sized (and unsized) types
 - stack implementation with global stack pointers and local stack offsets
