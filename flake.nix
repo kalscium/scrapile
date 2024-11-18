@@ -46,6 +46,10 @@
             cargo-watch
             rust-analyzer
             bacon
+
+            # for tree-sitter
+            tree-sitter
+            nodejs_23
           ];
 
           env = {

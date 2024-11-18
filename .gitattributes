@@ -1,0 +1,13 @@
+* text=auto eol=lf
+
+tree-sitter-scrapile/src/*.json linguist-generated
+tree-sitter-scrapile/src/parser.c linguist-generated
+tree-sitter-scrapile/src/tree_sitter/* linguist-generated
+
+tree-sitter-scrapile/bindings/** linguist-generated
+tree-sitter-scrapile/binding.gyp linguist-generated
+tree-sitter-scrapile/setup.py linguist-generated
+tree-sitter-scrapile/Makefile linguist-generated
+tree-sitter-scrapile/CMakeLists.txt linguist-generated
+tree-sitter-scrapile/Package.swift linguist-generated
+tree-sitter-scrapile/go.mod linguist-generated

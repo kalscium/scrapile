@@ -1,0 +1,36 @@
+{
+  "grammars": [
+    {
+      "name": "scrapile",
+      "camelcase": "Scrapile",
+      "scope": "source.scrapile",
+      "path": ".",
+      "file-types": [
+        "srpl"
+      ],
+      "injection-regex": "^scrapile$"
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0",
+    "license": "GPL-3.0",
+    "description": "A somewhat fully-fleged rust-like programming language that, surprisingly, compiles to scratch",
+    "authors": [
+      {
+        "name": "kalscium",
+        "email": "kalscium@protonmail.com"
+      }
+    ],
+    "links": {
+      "repository": "https://github.com/kalscium/scrapile"
+    }
+  },
+  "bindings": {
+    "c": true,
+    "go": true,
+    "node": true,
+    "python": true,
+    "rust": true,
+    "swift": true
+  }
+}

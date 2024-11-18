@@ -1,0 +1,27 @@
+[package]
+name = "tree-sitter-scrapile"
+description = "A somewhat fully-fleged rust-like programming language that, surprisingly, compiles to scratch"
+version = "0.1.0"
+authors = ["kalscium <kalscium@protonmail.com>"]
+license = "GPL-3.0"
+readme = "README.md"
+keywords = ["incremental", "parsing", "tree-sitter", "scrapile"]
+categories = ["parsing", "text-editors"]
+repository = "https://github.com/kalscium/scrapile"
+edition = "2021"
+autoexamples = false
+
+build = "bindings/rust/build.rs"
+include = ["bindings/rust/*", "grammar.js", "queries/*", "src/*"]
+
+[lib]
+path = "bindings/rust/lib.rs"
+
+[dependencies]
+tree-sitter-language = "0.1"
+
+[build-dependencies]
+cc = "1.1.22"
+
+[dev-dependencies]
+tree-sitter = "0.24.3"
