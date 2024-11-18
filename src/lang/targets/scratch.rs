@@ -48,12 +48,12 @@ pub fn tstmt(stmt: TStmt, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) {
                 // generate a temporary binding for the loop index
                 *tmp_binds += 1;
                 let loop_idx = get_tmp_binds_id(*tmp_binds);
-                stmts.push(Statement::SetVar { ident: loop_idx.clone(), value: Expr::PosInteger(0) });
+                stmts.push(Statement::SetVar { ident: loop_idx.clone(), value: Expr::PosInteger(1) }); // lists start at 1
                 
                 // loop through the list and append the elements
                 stmts.push(Statement::RepeatUntil {
                     // make sure it's within the bounds of the list
-                    condition: Condition::Not(Box::new(Condition::LessThan(Expr::Variable { ident: loop_idx.clone() }, Expr::ListLength { ident: list.clone() }))),
+                    condition: Condition::GreaterThan(Expr::Variable { ident: loop_idx.clone() }, Expr::ListLength { ident: list.clone() }),
                     body: vec![
                         // push the list element to the new list
                         Statement::PushList {
@@ -82,12 +82,12 @@ pub fn tstmt(stmt: TStmt, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) {
                 // generate a temporary binding for the loop index
                 *tmp_binds += 1;
                 let loop_idx = get_tmp_binds_id(*tmp_binds);
-                stmts.push(Statement::SetVar { ident: loop_idx.clone(), value: Expr::PosInteger(0) });
+                stmts.push(Statement::SetVar { ident: loop_idx.clone(), value: Expr::PosInteger(1) });
                 
                 // loop through the list and append the elements
                 stmts.push(Statement::RepeatUntil {
                     // make sure it's within the bounds of the list
-                    condition: Condition::Not(Box::new(Condition::LessThan(Expr::Variable { ident: loop_idx.clone() }, Expr::ListLength { ident: list.clone() }))),
+                    condition: Condition::GreaterThan(Expr::Variable { ident: loop_idx.clone() }, Expr::ListLength { ident: list.clone() }),
                     body: vec![
                         // push the list element to the new list
                         Statement::PushList {
@@ -330,6 +330,19 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) -> 
                     let list = tlist(expr.0, stmts, tmp_binds);
                     // return operation on that list
                     Expr::ListLength { ident: list }
+                },
+
+                // convert the `list_get` builtin to it's scratch counterpart
+                B::ListGet { list, idx } => {
+                    // translate list to get-var
+                    let list = tlist(list.0, stmts, tmp_binds);
+                    
+                    // translate the list idx (+1 due to their lists indexs starting at 1 instead of 0)
+                    let idx = texpr(idx.0, stmts, tmp_binds);
+                    let idx = Expr::Add(Box::new(idx), Box::new(Expr::PosInteger(1)));
+
+                    // return operation on that list
+                    Expr::ListElement { ident: list, idx: Box::new(idx) }
                 },
             }
         },

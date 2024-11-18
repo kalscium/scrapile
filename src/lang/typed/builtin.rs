@@ -11,6 +11,10 @@ pub enum TBuiltinFnCall {
     Timer,
     Panic(Span, Option<Spanned<TExpr>>),
     ListLen(Spanned<TExpr>),
+    ListGet {
+        list: Spanned<TExpr>,
+        idx: Spanned<TExpr>,
+    },
 }
 
 /// Add type annotations to builtin-function calls
@@ -22,6 +26,7 @@ pub fn wrap_builtin(ident: &str, ident_span: Span, span: Span, args: &[Expr], ty
         "timer" => builtin_timer(span, args),
         "panic" => builtin_panic(span, args, type_table, var_table),
         "list_len" => builtin_list_len(span, args, type_table, var_table),
+        "list_get" => builtin_list_get(span, args, type_table, var_table),
 
         // if the builtin function is not found, then return error
         _ => return Err(Error::BuiltinNotFound {
@@ -214,5 +219,60 @@ fn builtin_list_len(span: Span, args: &[Expr], type_table: &TypeTable, var_table
     Ok((
         TBuiltinFnCall::ListLen(expr.0),
         Type::Number,
+    ))
+}
+
+/// Add type annotations to `list_get` builtin-function calls
+fn builtin_list_get(span: Span, args: &[Expr], type_table: &TypeTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
+    // make sure there's at least one argument
+    if args.len() < 1 {
+        return Err(Error::BuiltinLittleArgs {
+            call_span: span,
+            min: 0..2,
+        });
+    }
+
+    // make sure there's only two arguments
+    if args.len() > 2 {
+        return Err(Error::BuiltinManyArgs {
+            call_span: span,
+            max: 0..2,
+            arg_span: args[1].span.clone(),
+        });
+    }
+
+    // wrap the list expr
+    let (list_expr, _) = wrap_expr(&args[0].asa, type_table, var_table)?;
+
+    // get the list type
+    let Type::List(list_type) = list_expr.1
+    else {
+        return Err(Error::BuiltinArgTypeMismatch {
+            span: list_expr.0.1,
+            param_type: Type::List(Box::new(list_expr.1.clone())),
+            arg_type: list_expr.1,
+            call_span: span,
+        });
+    };
+
+    // wrap the index expr and make sure it's of type nubmer
+    let (idx_expr, _) = wrap_expr(&args[1].asa, type_table, var_table)?;
+    match idx_expr.1 {
+        Type::Number => (),
+        _ => return Err(Error::BuiltinArgTypeMismatch {
+            span: idx_expr.0.1,
+            param_type: Type::Number,
+            arg_type: idx_expr.1,
+            call_span: span,
+        }),
+    }
+
+    // return completed builtin-fn call
+    Ok((
+        TBuiltinFnCall::ListGet {
+            list: list_expr.0,
+            idx: idx_expr.0,
+        },
+        *list_type,
     ))
 }
