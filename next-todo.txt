@@ -1,11 +1,23 @@
-- fix precedence definition for ketchup (mine is inversed)
+<<< V1 >>>
 - list builtins
+- function calls (basic, no recursion)
+- basic cli
+
+<<< V2 >>>
+- bracket parser (also lists)
+- support for multiple errors through the bracket parser
+- basically rewrite it lmao
 - += -= *= /=
 - write basic tree-sitter
 - rewrite the spans to include the filename, also allow for inclusion of other files
-- function calls (basic, no recursion)
 - sized (and unsized) types
-- stack implementation with global stack pointers and local stack offsets
-- recursion support through some sort of state-saving through a function callback stack
+- stack implementation with global stack pointer & stack frame base pointer
+- pointers & references
+- function calls with recursion support through pushing to the stack
 - expr if statements
 - expr while statements
+- proper tuples
+- proper structures / user types
+- stdlib
+- multiple backends (compile to assembly)
+- multi-threading
