@@ -332,6 +332,22 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) -> 
                     Expr::ListLength { ident: list }
                 },
 
+                // convert the `list_len` builtin to it's scratch counterpart
+                B::ListPush { list, expr } => {
+                    // translate the expr & list
+                    let list = tlist(list.0, stmts, tmp_binds);
+                    let expr = texpr(expr.0, stmts, tmp_binds);
+
+                    // push to the list
+                    stmts.push(Statement::PushList {
+                        ident: list,
+                        value: expr,
+                    });
+
+                    // return nill
+                    Expr::String(NIL.to_string())
+                },
+
                 // convert the `list_get` builtin to it's scratch counterpart
                 B::ListGet { span, list, idx } => {
                     // translate list to get-var
@@ -385,6 +401,69 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) -> 
 
                     // return operation on that list
                     Expr::ListElement { ident: list, idx: Box::new(idx_plus) }
+                },
+
+                // convert the `list_len` builtin to it's scratch counterpart
+                B::ListInsert { span, list, idx, expr } => {
+                    // translate the idx, expr & list
+                    let list = tlist(list.0, stmts, tmp_binds);
+                    let expr = texpr(expr.0, stmts, tmp_binds);
+                    
+                    // translate the list idx (+1 due to their lists indexs starting at 1 instead of 0)
+                    let idx = texpr(idx.0, stmts, tmp_binds);
+                    let idx_plus = Expr::Add(Box::new(idx.clone()), Box::new(Expr::PosInteger(1)));
+
+                    // add bounds checking statement (negative)
+                    stmts.push(Statement::If {
+                        condition: Condition::LessThan(
+                            idx.clone(),
+                            Expr::PosInteger(0),
+                        ),
+                        body: vec![
+                            Statement::SetVar {
+                                ident: PANIC_NAME.to_string(),
+                                value: Expr::Concat(
+                                    Box::new(Expr::String(format!("panic at <{span:?}>: index cannot be negative: idx: "))),
+                                    Box::new(idx.clone()),
+                                ),
+                            },
+                            Statement::CallProcedure { ident: "$panic".to_string() }
+                        ],
+                    });
+
+                    // add bounds checking statement (larger than length)
+                    stmts.push(Statement::If {
+                        condition: Condition::GreaterThan(
+                            idx_plus.clone(),
+                            Expr::ListLength { ident: list.clone() },
+                        ),
+                        body: vec![
+                            Statement::SetVar { // the pain of formatting a string in scratch
+                                ident: PANIC_NAME.to_string(),
+                                value: Expr::Concat(
+                                    Box::new(Expr::Concat(
+                                        Box::new(Expr::Concat(
+                                            Box::new(Expr::String(format!("panic at <{span:?}>: index out of bounds: len is "))),
+                                            Box::new(Expr::ListLength { ident: list.clone() }),
+                                        )),
+                                        Box::new(Expr::String(" but the index is ".to_string())),
+                                    )),
+                                    Box::new(idx),
+                                ),
+                            },
+                            Statement::CallProcedure { ident: "$panic".to_string() }
+                        ],
+                    });
+
+                    // insert the expr at that index in the list
+                    stmts.push(Statement::InsertList {
+                        ident: list,
+                        value: expr,
+                        idx: idx_plus,
+                    });
+
+                    // return nill
+                    Expr::String(NIL.to_string())
                 },
             }
         },

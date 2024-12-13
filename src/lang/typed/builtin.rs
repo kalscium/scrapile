@@ -16,6 +16,16 @@ pub enum TBuiltinFnCall {
         list: Spanned<TExpr>,
         idx: Spanned<TExpr>,
     },
+    ListPush {
+        list: Spanned<TExpr>,
+        expr: Spanned<TExpr>,
+    },
+    ListInsert {
+        span: Span,
+        list: Spanned<TExpr>,
+        idx: Spanned<TExpr>,
+        expr: Spanned<TExpr>,
+    },
 }
 
 /// Add type annotations to builtin-function calls
@@ -28,6 +38,8 @@ pub fn wrap_builtin(ident: &str, ident_span: Span, span: Span, args: &[Expr], ty
         "panic" => builtin_panic(span, args, type_table, var_table),
         "list_len" => builtin_list_len(span, args, type_table, var_table),
         "list_get" => builtin_list_get(span, args, type_table, var_table),
+        "list_push" => builtin_list_push(span, args, type_table, var_table),
+        "list_insert" => builtin_list_insert(span, args, type_table, var_table),
 
         // if the builtin function is not found, then return error
         _ => return Err(Error::BuiltinNotFound {
@@ -52,7 +64,7 @@ fn builtin_as_str(span: Span, args: &[Expr], type_table: &TypeTable, var_table: 
     if args.len() > 1 {
         return Err(Error::BuiltinManyArgs {
             call_span: span,
-            max: 0..2,
+            max: 1..2,
             arg_span: args[1].span.clone(),
         });
     }
@@ -94,7 +106,7 @@ fn builtin_input(span: Span, args: &[Expr], type_table: &TypeTable, var_table: &
     if args.len() > 1 {
         return Err(Error::BuiltinManyArgs {
             call_span: span,
-            max: 0..2,
+            max: 1..2,
             arg_span: args[1].span.clone(),
         });
     }
@@ -191,7 +203,7 @@ fn builtin_list_len(span: Span, args: &[Expr], type_table: &TypeTable, var_table
     if args.len() < 1 {
         return Err(Error::BuiltinLittleArgs {
             call_span: span,
-            min: 0..1,
+            min: 1..2,
         });
     }
 
@@ -199,7 +211,7 @@ fn builtin_list_len(span: Span, args: &[Expr], type_table: &TypeTable, var_table
     if args.len() > 1 {
         return Err(Error::BuiltinManyArgs {
             call_span: span,
-            max: 0..1,
+            max: 1..2,
             arg_span: args[1].span.clone(),
         });
     }
@@ -225,11 +237,11 @@ fn builtin_list_len(span: Span, args: &[Expr], type_table: &TypeTable, var_table
 
 /// Add type annotations to `list_get` builtin-function calls
 fn builtin_list_get(span: Span, args: &[Expr], type_table: &TypeTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
-    // make sure there's at least one argument
-    if args.len() < 1 {
+    // make sure there's at least two arguments
+    if args.len() < 2 {
         return Err(Error::BuiltinLittleArgs {
             call_span: span,
-            min: 0..2,
+            min: 2..3,
         });
     }
 
@@ -237,8 +249,8 @@ fn builtin_list_get(span: Span, args: &[Expr], type_table: &TypeTable, var_table
     if args.len() > 2 {
         return Err(Error::BuiltinManyArgs {
             call_span: span,
-            max: 0..2,
-            arg_span: args[1].span.clone(),
+            max: 2..3,
+            arg_span: args[2].span.clone(),
         });
     }
 
@@ -276,5 +288,127 @@ fn builtin_list_get(span: Span, args: &[Expr], type_table: &TypeTable, var_table
             idx: idx_expr.0,
         },
         *list_type,
+    ))
+}
+
+/// Add type annotations to `list_push` builtin-function calls
+fn builtin_list_push(span: Span, args: &[Expr], type_table: &TypeTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
+    // make sure there's at least two arguments
+    if args.len() < 2 {
+        return Err(Error::BuiltinLittleArgs {
+            call_span: span,
+            min: 2..3,
+        });
+    }
+
+    // make sure there's only two arguments
+    if args.len() > 2 {
+        return Err(Error::BuiltinManyArgs {
+            call_span: span,
+            max: 2..3,
+            arg_span: args[2].span.clone(),
+        });
+    }
+
+    // wrap the list expr
+    let (list_expr, _) = wrap_expr(&args[0].asa, type_table, var_table)?;
+
+    // get the list type
+    let Type::List(list_type) = list_expr.1
+    else {
+        return Err(Error::BuiltinArgTypeMismatch {
+            span: list_expr.0.1,
+            param_type: Type::List(Box::new(list_expr.1.clone())),
+            arg_type: list_expr.1,
+            call_span: span,
+        });
+    };
+
+    // wrap the element expr and make sure it's of the right type
+    let (expr, _) = wrap_expr(&args[1].asa, type_table, var_table)?;
+    if expr.1 != *list_type {
+        return Err(Error::BuiltinArgTypeMismatch {
+            span: expr.0.1,
+            param_type: *list_type,
+            arg_type: expr.1,
+            call_span: span,
+        });
+    }
+
+    // return completed builtin-fn call
+    Ok((
+        TBuiltinFnCall::ListPush {
+            list: list_expr.0,
+            expr: expr.0,
+        },
+        Type::Nil,
+    ))
+}
+
+/// Add type annotations to `list_insert` builtin-function calls
+fn builtin_list_insert(span: Span, args: &[Expr], type_table: &TypeTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
+    // make sure there's at least three arguments
+    if args.len() < 3 {
+        return Err(Error::BuiltinLittleArgs {
+            call_span: span,
+            min: 3..4,
+        });
+    }
+
+    // make sure there's only three arguments
+    if args.len() > 3 {
+        return Err(Error::BuiltinManyArgs {
+            call_span: span,
+            max: 3..4,
+            arg_span: args[3].span.clone(),
+        });
+    }
+
+    // wrap the list expr
+    let (list_expr, _) = wrap_expr(&args[0].asa, type_table, var_table)?;
+
+    // get the list type
+    let Type::List(list_type) = list_expr.1
+    else {
+        return Err(Error::BuiltinArgTypeMismatch {
+            span: list_expr.0.1,
+            param_type: Type::List(Box::new(list_expr.1.clone())),
+            arg_type: list_expr.1,
+            call_span: span,
+        });
+    };
+
+    // wrap the index expr and make sure it's of type nubmer
+    let (idx_expr, _) = wrap_expr(&args[1].asa, type_table, var_table)?;
+    match idx_expr.1 {
+        Type::Number => (),
+        _ => return Err(Error::BuiltinArgTypeMismatch {
+            span: idx_expr.0.1,
+            param_type: Type::Number,
+            arg_type: idx_expr.1,
+            call_span: span,
+        }),
+    }
+
+    // wrap the element expr and make sure it's of the right type
+    let (expr, _) = wrap_expr(&args[2].asa, type_table, var_table)?;
+    if expr.1 != *list_type {
+        return Err(Error::BuiltinArgTypeMismatch {
+            span: expr.0.1,
+            param_type: *list_type,
+            arg_type: expr.1,
+            call_span: span,
+        });
+    }
+
+    // return completed builtin-fn call
+    Ok((
+        TBuiltinFnCall::ListInsert {
+            span,
+            list: list_expr.0,
+            idx: idx_expr.0,
+            expr: expr.0,
+        },
+        Type::Nil,
     ))
 }

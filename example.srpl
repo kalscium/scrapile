@@ -50,6 +50,10 @@ main {
     var mut list: [str] = ["nice"];
     mut list = ["hello", "there", "here", "is", "a", "list", "of", "strings"];
     println!("here is a list cast to a string: " <> as_str!(list));
+
+    // lets add an item to the list!
+    list_push!(list, "nice");
+    list_insert!(list, 2, "wow");
     
     // lets find the length of a list
     println!("wow, the list before had " <> as_str!(list_len!(list)) <> " items");
