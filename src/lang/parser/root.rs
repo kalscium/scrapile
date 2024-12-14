@@ -5,14 +5,14 @@ use logos::SpannedIter;
 use crate::lang::{error::parser::Error, parser::block::parse_block, token::Token, Spanned};
 use super::block::Block;
 
-#[derive(Debug, Clone)]
-pub enum Root {
-    Main(Block),
+#[derive(Debug, Default)]
+pub struct Roots {
+    pub main: Vec<Spanned<Block>>,
 }
 
 /// Parses the roots of the project (stuff that will never be placed in a within any block or scope)
-pub fn parse_root(tokens: &mut SpannedIter<'_, Token>) -> Result<Vec<Spanned<Root>>, Vec<KError<Error>>> {
-    let mut roots = Vec::new();
+pub fn parse_root(tokens: &mut SpannedIter<'_, Token>) -> Result<Roots, Vec<KError<Error>>> {
+    let mut roots = Roots::default();
     
     // parse every root in the project
     while let Some((token, span)) = tokens.next() {
@@ -20,11 +20,9 @@ pub fn parse_root(tokens: &mut SpannedIter<'_, Token>) -> Result<Vec<Spanned<Roo
             Err(err) => return Err(vec![KError::Other(span, err)]),
 
             Ok(Token::Main) => {
+                // parse and push the main root
                 let (main, span) = parse_main(tokens)?;
-                roots.push((
-                    Root::Main(main),
-                    span,
-                ))
+                roots.main.push((main, span));
             },
             
             _ => return Err(vec![KError::Other(span, Error::ExpectedRoot)]),

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::lang::{error::typed::Error, parser::root::Root, Spanned};
+use crate::lang::{error::typed::Error, parser::root::Roots, Spanned};
 use super::{block::{self, TBlock}, symbol_table::{TypeTable, VarTable}};
 
 /// A type annotated representation of the entire project with all the roots evaluated statically
@@ -14,33 +14,26 @@ pub struct Project {
 }
 
 /// Wraps the root of the project in types and returns a single, safe and valid project root
-pub fn wrap_root(roots: &[Spanned<Root>]) -> Result<Project, Error> {
+pub fn wrap_root(roots: &Roots) -> Result<Project, Error> {
     let type_table = TypeTable(HashMap::new());
-    let mut main = None;
-    
-    // annotate all the roots
-    for (root, span) in roots {
-        match root {
-            // set the main block
-            Root::Main(block) => {
-                let (block, _) = block::wrap_block(block.clone(), &type_table, VarTable::new("$root".to_string()))?; // wrap main block in types
 
-                // try to set the main block, if there's already one, then throw an error
-                if let Some((_, first_span)) = main.replace((block, span.clone())) {
-                    return Err(Error::MultipleMain {
-                        first_span,
-                        additional_span: span.clone(),
-                    });
-                }
-            }
-        }
+    // make sure there's one and only one main root, otherwise throw an error
+    let Some(main) = roots.main.get(0)
+    else {
+        return Err(Error::NoMain)        
+    };
+    if let Some(extra) = roots.main.get(1) {
+        return Err(Error::MultipleMain {
+            first_span: main.1.clone(),
+            additional_span: extra.1.clone(),
+        });
     }
 
-    // unwrap the main procedure, if there isn't one, throw an error
-    let main = match main {
-        Some(main) => main,
-        None => return Err(Error::NoMain),
-    };
+    // wrap the main block in types
+    let main = (
+        block::wrap_block(main.0.clone(), &type_table, VarTable::new("$root".to_string()))?.0,
+        main.1.clone(),
+    );
 
     Ok(Project {
         main,
