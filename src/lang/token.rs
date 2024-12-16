@@ -21,8 +21,6 @@ pub enum Token {
     // Symbols
     #[token("+")]
     Plus,
-    #[token("-")]
-    Minus,
     #[token("*")]
     Star,
     #[token("/")]
@@ -53,6 +51,12 @@ pub enum Token {
     GTE,
     #[token("<=")]
     LTE,
+
+    // `-` symbols
+    #[token("-")]
+    Minus,
+    #[token("->")]
+    Arrw,
 
     // `=` symbols
     #[token("=")]

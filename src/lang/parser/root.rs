@@ -3,11 +3,12 @@
 use ketchup::error::KError;
 use logos::SpannedIter;
 use crate::lang::{error::parser::Error, parser::block::parse_block, token::Token, Spanned};
-use super::block::Block;
+use super::{block::Block, function::{self, FuncDef}};
 
 #[derive(Debug, Default)]
 pub struct Roots {
     pub main: Vec<Spanned<Block>>,
+    pub funcs: Vec<Spanned<FuncDef>>,
 }
 
 /// Parses the roots of the project (stuff that will never be placed in a within any block or scope)
@@ -23,6 +24,12 @@ pub fn parse_root(tokens: &mut SpannedIter<'_, Token>) -> Result<Roots, Vec<KErr
                 // parse and push the main root
                 let (main, span) = parse_main(tokens)?;
                 roots.main.push((main, span));
+            },
+
+            Ok(Token::Func) => {
+                // parse and push the function
+                let (func, span) = function::parse_fn(tokens)?;
+                roots.funcs.push((func, span));
             },
             
             _ => return Err(vec![KError::Other(span, Error::ExpectedRoot)]),

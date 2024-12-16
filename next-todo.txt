@@ -1,5 +1,7 @@
 <<< V1 >>>
 - list builtins
+- function definitions
+- return, break & continue statements
 - function calls (basic, no recursion)
 - basic cli
 

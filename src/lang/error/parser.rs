@@ -35,7 +35,7 @@ pub enum Error {
     },
     /// Occurs when there is a token besides a comma or right-parenthesis
     ExpectedCommaOrRParen {
-        /// The location of the start of the tuple
+        /// The location of the start of the parentheses
         ctx_span: Span,
     },
     /// Occurs when there is a token besides a semi-colon or right-brace
@@ -88,6 +88,27 @@ pub enum Error {
         /// The location of the if or while statement
         ctx_span: Span,
     },
+    
+    /// Occurs when a function definition doesn't have an identifier
+    ExpectedFnIdent {
+        /// The location of the function def
+        ctx_span: Span,
+    },
+    /// Occurs when a function parameter doesn't have an identifier
+    ExpectedFnParamIdent {
+        /// The location of the function parameters
+        ctx_span: Span,
+    },
+    /// Occurs when a function parameter doesn't have an a colon to separate the identifier and type
+    ExpectedFnParamColon {
+        /// The location of the parameter
+        ctx_span: Span,
+    },
+    /// Occurs when a function definition is missing a body
+    ExpectedFnBody {
+        /// The locatino of the function def
+        ctx_span: Span,
+    },
 }
 
 impl Reportable for KError<Error> {
@@ -109,10 +130,10 @@ impl Reportable for KError<Error> {
                 E::ExpectedRoot => ("expected root token", span.clone(), "expected a root token like `main` or `fn ...`", span, "consider wrapping this in a `main { ... }` or function"),
                 E::ExpectedType => ("expected a type annotation", span.clone(), "expected a type annotation", span, "consider adding a type annotation here, like `str` or `num`"),
 
-                E::UnclosedParentheses { ctx_span } => ("unclosed parentheses", span, "expected `)`", ctx_span, "to complete this tuple"),
+                E::UnclosedParentheses { ctx_span } => ("unclosed parentheses", span, "expected `)`", ctx_span, "to complete this"),
                 E::UnclosedBrace { ctx_span } => ("unclosed brace", span, "expected `}`", ctx_span, "to complete this block"),
                 E::UnclosedBrackets { ctx_span } => ("unclosed brackets", span, "expected `]`", ctx_span, "to complete this list"),
-                E::ExpectedCommaOrRParen { ctx_span } => ("expected comma or `)`", span, "expected `,` or `)`", ctx_span, "to continue or complete this tuple"),
+                E::ExpectedCommaOrRParen { ctx_span } => ("expected comma or `)`", span, "expected `,` or `)`", ctx_span, "to continue or complete this"),
                 E::ExpectedSemiOrRBrace { ctx_span } => ("expected semi-colon or right brace", span, "expected `;` or `}`", ctx_span, "to continue or complete this block"),
                 E::ExpectedCommaOrRBracket { ctx_span } => ("expected comma or `]`", span, "expected `,` or `]`", ctx_span, "to continue or complete this list"),
                 E::ExpectedCallLParen { ctx_span } => ("expected arguments for this function call", span, "expected arguments `(`", ctx_span, "this func call expected args" ),
@@ -125,6 +146,11 @@ impl Reportable for KError<Error> {
                 E::ExpectedIdent { ctx_span } => ("expected an identifier", span, "found this instead", ctx_span, "in this statement"),
 
                 E::ExpectedCondLParen { ctx_span } => ("expected `(` in 'if'/'while' statement condition", span, "try wrapping this in parentheses", ctx_span, "in this 'if'/'while' statement"),
+
+                E::ExpectedFnIdent { ctx_span } => ("expected identifier for function definition", span, "found this instead", ctx_span, "in these function parameters"),
+                E::ExpectedFnParamIdent { ctx_span } => ("expected identifier for function parameter", span, "found this instead", ctx_span, "in these function parameters"),
+                E::ExpectedFnParamColon { ctx_span } => ("expected `:` to separate the identifier and type", span, "found this instead", ctx_span, "in this function parameter"),
+                E::ExpectedFnBody { ctx_span } => ("expected one of `->`, `(`, `{`", span, "found this instead", ctx_span, "in function definition"),
             },
         };
 

@@ -1,3 +1,7 @@
+fn add(x: num, y: num) -> num {
+    x + y
+}
+
 main {
     /*
         Multi-line
