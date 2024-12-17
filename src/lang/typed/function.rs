@@ -60,7 +60,7 @@ pub fn wrap_call(
         }
 
         // convert the parameter passing into a variable set
-        let ident = format!("${ident}/{}", param.0.0);
+        let ident = format!("$func${ident}/{}", param.0.0);
         call_args.push((ident, wrapped));
     }
     

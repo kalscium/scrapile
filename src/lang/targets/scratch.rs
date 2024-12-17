@@ -5,7 +5,7 @@ pub fn translate(project: Project) -> Assembly {
     let mut stmts = vec![Statement::ClearList { ident: "console".to_string() }]; // first statement is to clear the console
     let mut tmp_binds = 0; // temporary binding idx
 
-    let procedures = vec![
+    let mut procedures = vec![
         // panic
         Procedure {
             ident: "$panic".to_string(),
@@ -22,6 +22,59 @@ pub fn translate(project: Project) -> Assembly {
     }
     if let Some(stmt) = project.main.tail {
         tstmt(stmt.0.0, &mut stmts, &mut tmp_binds);
+    }
+
+    // translate the function procedures
+    for (ident, func) in project.procedures {
+        let mut stmts = Vec::new(); // each procedure has it's own statements
+
+        for stmt in func.stmts {
+            tstmt(stmt.0.0, &mut stmts, &mut tmp_binds);
+        }
+        match func.tail {
+            // if the tail is an expr, then set the return variable to it
+            Some(((TStmt::Expr(expr), _), etype)) => {
+                // check if the tail is a list or not
+                if let Type::List(_) = etype {
+                    // if so, then copy the list contents to the return list
+
+                    // translate the list to a var-get
+                    let list = tlist(expr, &mut stmts, &mut tmp_binds);
+
+                    // wipe the output list beforehand
+                    stmts.push(Statement::ClearList { ident: "$return".to_string() });
+                    
+                    // generate a temporary binding for the loop index
+                    tmp_binds += 1;
+                    let loop_idx = get_tmp_binds_id(tmp_binds);
+                    stmts.push(Statement::SetVar { ident: loop_idx.clone(), value: Expr::PosInteger(1) }); // lists start at 1
+                
+                    // loop through the list and append the elements
+                    stmts.push(Statement::RepeatUntil {
+                        // make sure it's within the bounds of the list
+                        condition: Condition::GreaterThan(Expr::Variable { ident: loop_idx.clone() }, Expr::ListLength { ident: list.clone() }),
+                        body: vec![
+                            // push the list element to the new list
+                            Statement::PushList {
+                                ident: "$return".to_string(),
+                                value: Expr::ListElement { ident: list, idx: Box::new(Expr::Variable { ident: loop_idx.clone() }) },
+                            },
+                            // update the index
+                            Statement::SetVar { ident: loop_idx.clone(), value: Expr::Add(Box::new(Expr::Variable { ident: loop_idx }), Box::new(Expr::PosInteger(1))) },
+                        ],
+                    });
+                } else {
+                    // otherwise simply set the return var to the tail
+                    let expr = texpr(expr, &mut stmts, &mut tmp_binds);
+                    stmts.push(Statement::SetVar { ident: "$return".to_string(), value: expr });
+                }
+            },
+            // otherwise evaluate the statement if there is one
+            Some(((stmt, _), _)) => tstmt(stmt, &mut stmts, &mut tmp_binds),
+            _ => (),
+        }
+
+        procedures.push(Procedure { ident, body: stmts });
     }
 
     Assembly {
@@ -45,6 +98,9 @@ pub fn tstmt(stmt: TStmt, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) {
                 // translate the list to a var-get
                 let list = tlist(value.0.0, stmts, tmp_binds);
 
+                // wipe the output list beforehand
+                stmts.push(Statement::ClearList { ident: ident.clone() });
+                
                 // generate a temporary binding for the loop index
                 *tmp_binds += 1;
                 let loop_idx = get_tmp_binds_id(*tmp_binds);
@@ -79,6 +135,9 @@ pub fn tstmt(stmt: TStmt, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) {
                 // translate the list to a var-get
                 let list = tlist(value.0.0, stmts, tmp_binds);
 
+                // wipe the output list beforehand
+                stmts.push(Statement::ClearList { ident: ident.clone() });
+                
                 // generate a temporary binding for the loop index
                 *tmp_binds += 1;
                 let loop_idx = get_tmp_binds_id(*tmp_binds);
@@ -161,6 +220,9 @@ pub fn tlist(list: TExpr, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) -> 
             *tmp_binds += 1;
             let ident = get_tmp_binds_id(*tmp_binds);
 
+            // wipe the list beforehand
+            stmts.push(Statement::ClearList { ident: ident.clone() });
+
             // iterate through the exprs and add them to the list
             for (i, expr) in exprs.into_iter().enumerate() {
                 let expr = texpr(expr.0, stmts, tmp_binds);
@@ -170,9 +232,16 @@ pub fn tlist(list: TExpr, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) -> 
 
             ident
         },
+        // a function call
+        TExpr::Call(ident, args) => {
+            // call the function
+            texpr(TExpr::Call(ident, args), stmts, tmp_binds);
+            // return the return list identifier
+            "$return".to_string()
+        },
 
         // no support for anything else yet
-        _ => todo!(),
+        _ => unreachable!(),
     }
 }
 
@@ -466,6 +535,55 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) -> 
                     Expr::String(NIL.to_string())
                 },
             }
+        },
+
+        // function calls
+        E::Call(ident, exprs) => {
+            // pass the arguments to the function through variables
+            for (param, expr) in exprs {
+                // check if the argument is a list or not
+                if let Type::List(_) = expr.1 {
+                    // if so, then copy the list contents to the parameter
+
+                    // translate the list to a var-get
+                    let list = tlist(expr.0.0, stmts, tmp_binds);
+
+                    // wipe the output list beforehand
+                    stmts.push(Statement::ClearList { ident: param.clone() });
+                    
+                    // generate a temporary binding for the loop index
+                    *tmp_binds += 1;
+                    let loop_idx = get_tmp_binds_id(*tmp_binds);
+                    stmts.push(Statement::SetVar { ident: loop_idx.clone(), value: Expr::PosInteger(1) }); // lists start at 1
+                
+                    // loop through the list and append the elements
+                    stmts.push(Statement::RepeatUntil {
+                        // make sure it's within the bounds of the list
+                        condition: Condition::GreaterThan(Expr::Variable { ident: loop_idx.clone() }, Expr::ListLength { ident: list.clone() }),
+                        body: vec![
+                            // push the list element to the new list
+                            Statement::PushList {
+                                ident: param.clone(),
+                                value: Expr::ListElement { ident: list, idx: Box::new(Expr::Variable { ident: loop_idx.clone() }) },
+                            },
+                            // update the index
+                            Statement::SetVar { ident: loop_idx.clone(), value: Expr::Add(Box::new(Expr::Variable { ident: loop_idx }), Box::new(Expr::PosInteger(1))) },
+                        ],
+                    });
+
+                    continue;
+                }
+
+                // otherwise simply set the parameter to the argument
+                let expr = texpr(expr.0.0, stmts, tmp_binds);
+                stmts.push(Statement::SetVar { ident: param, value: expr });
+            }
+
+            // call the function
+            stmts.push(Statement::CallProcedure { ident });
+
+            // get the result
+            Expr::Variable { ident: "$return".to_string() }
         },
 
         // concat

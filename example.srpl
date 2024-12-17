@@ -1,5 +1,14 @@
-fn add(x: num, y: num) -> num {
-    x + y
+// sums the contents of a list
+fn sum(list: [num]) -> num {
+    var mut sum = 0;
+    var mut i = 0;
+
+    while (i < list_len!(list)) {
+        mut sum = sum + list_get!(list, i);
+        mut i = i + 1;
+    };
+
+    sum
 }
 
 main {
@@ -73,7 +82,7 @@ main {
     // lets try an 'out of bounds' list index
     # var this_will_panic: str = list_get!(list, 14);
     var this_will_also_panic: nil = {
-        list_get!(list, -1);
+        # list_get!(list, -1);
     };
 
     // wow booleans
@@ -92,7 +101,29 @@ main {
         println!("allows for blocks");
     };
 
+    // even user-defined functions are available to us :D (and nestable)
+    var summed = sum([ // should be fifteen
+        sum([1, 2, 3]),
+        4,
+        5,
+    ]);
+    println!("summed: " <> as_str!(summed));
+
+    // another few examples
+    greet("Gertrude");
+    println!(stone());
+
     # end the timer
     var end_time = timer!();
     println!("program took " <> as_str!(end_time - start_time) <> "s to complete");
+}
+
+// functions don't have to be defined at the top!
+fn greet(name: str) -> nil {
+    println!("hello " <> name <> "!");
+}
+
+// functions don't even have to have arguments
+fn stone -> str {
+    "set in *stone*"
 }

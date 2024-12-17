@@ -9,7 +9,7 @@ pub struct Project {
     pub main: TBlock,
     
     /// Additional user-defined procedures
-    pub procedures: Vec<TBlock>,
+    pub procedures: Vec<(String, TBlock)>,
 }
 
 /// Wraps the root of the project in types and returns a single, safe and valid project root
@@ -83,7 +83,7 @@ pub fn wrap_root(roots: &Roots) -> Result<Project, Error> {
         }
 
         // push the wrapped block
-        procedures.push(wrapped.0);
+        procedures.push((func.0.ident.clone(), wrapped.0));
     }
 
     Ok(Project {
