@@ -1,15 +1,13 @@
 <<< V1 >>>
-- list builtins
-- function definitions
-- return, break & continue statements
-- function calls (basic, no recursion)
+- string builtin functions
+- += -= *= /=
+- guard statements
 - basic cli
 
 <<< V2 >>>
 - bracket parser (also lists)
 - support for multiple errors through the bracket parser
 - basically rewrite it lmao
-- += -= *= /=
 - write basic tree-sitter
 - rewrite the spans to include the filename, also allow for inclusion of other files
 - sized (and unsized) types
@@ -18,6 +16,7 @@
 - function calls with recursion support through pushing to the stack
 - expr if statements
 - expr while statements
+- return, break & continue statements
 - proper tuples
 - proper structures / user types
 - stdlib
