@@ -18,7 +18,7 @@ main {
     // now here is some maths *and also variables*
     var maths: num = 1 + 2 / 3 * 96 - -5;
     println!("here's the output of the maths: " <> as_str!(maths)); # string concatination
-    # casting to a string is alos demonstrated
+    # casting to a string is also demonstrated
 
     // blocks are nice
     var block_msg: str = {

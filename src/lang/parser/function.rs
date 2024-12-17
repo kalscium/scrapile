@@ -9,7 +9,7 @@ use super::block::Block;
 pub struct FuncDef {
     pub ident: String,
     pub params: Vec<Spanned<(String, Type)>>,
-    pub retrn_type: Option<Spanned<Type>>,
+    pub retrn_type: Spanned<Type>,
     pub body: Spanned<Block>,
 }
 
@@ -34,16 +34,16 @@ pub fn parse_fn(tokens: &mut SpannedIter<'_, Token>) -> Result<Spanned<FuncDef>,
         token => (None, token),
     };
 
-    // parse the function return type (if there is one)
-    let (retrn_type, next_tok) = match next_tok {
-        Some((Ok(Token::Arrw), _)) => (Some(types::parse_type(tokens.next(), tokens)?), tokens.next()),
+    // parse the function return type
+    let retrn_type = match next_tok {
+        Some((Ok(Token::Arrw), _)) => types::parse_type(tokens.next(), tokens)?,
 
         // un-recognised token
-        token => (None, token),
+        _ => return Err(vec![KError::Other(tokens.span(), Error::ExpectedFnRetrnType { ctx_span: start_span.start..tokens.span().end })]),
     };
 
     // parse the function body
-    let body = match next_tok {
+    let body = match tokens.next() {
         Some((Ok(Token::LBrace), _)) => block::parse_block(tokens)?,
         Some((Err(err), span)) => return Err(vec![KError::Other(span, err)]),
 

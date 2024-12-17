@@ -17,10 +17,10 @@ pub fn translate(project: Project) -> Assembly {
     ];
     
     // translate the main procedure's statements
-    for stmt in project.main.0.stmts {
+    for stmt in project.main.stmts {
         tstmt(stmt.0.0, &mut stmts, &mut tmp_binds);
     }
-    if let Some(stmt) = project.main.0.tail {
+    if let Some(stmt) = project.main.tail {
         tstmt(stmt.0.0, &mut stmts, &mut tmp_binds);
     }
 

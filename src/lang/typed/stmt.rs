@@ -1,5 +1,5 @@
 use crate::lang::{error::typed::Error, parser::stmt::Stmt, typed::{symbol_table::VarTableEntry, types}, Spanned};
-use super::{expr::{wrap_expr, TExpr}, symbol_table::{TypeTable, VarTable}, types::{Type, Typed}};
+use super::{expr::{wrap_expr, TExpr}, symbol_table::{FuncTable, TypeTable, VarTable}, types::{Type, Typed}};
 
 /// A tree version of a stmt for type annotations
 #[derive(Debug)]
@@ -34,17 +34,17 @@ pub enum TStmt {
 }
 
 /// Adds type annotations to a statement
-pub fn wrap_stmt(stmt: Spanned<Stmt>, type_table: &TypeTable, var_table: &mut VarTable) -> Result<Typed<TStmt>, Error> {
+pub fn wrap_stmt(stmt: Spanned<Stmt>, type_table: &TypeTable, func_table: &FuncTable, var_table: &mut VarTable) -> Result<Typed<TStmt>, Error> {
     let (stmt, span) = stmt;
     match stmt {
         Stmt::Expr(expr) => {
-            let expr = wrap_expr(&expr.asa, type_table, var_table)?.0;
+            let expr = wrap_expr(&expr.asa, type_table, func_table, var_table)?.0;
             let stmt_type = expr.1.clone();
 
             Ok((TStmt::Expr(expr.0.0), stmt_type))
         },
         Stmt::VarMutate { ident, value } => {
-            let (value, _) = wrap_expr(&value.asa, type_table, var_table)?; // wrap value
+            let (value, _) = wrap_expr(&value.asa, type_table, func_table, var_table)?; // wrap value
 
             // make sure the variable exists and if so, get the type of it
             let (var_ident, var_type, mutable, var_span) = match var_table.get(&ident.0) {
@@ -69,7 +69,7 @@ pub fn wrap_stmt(stmt: Spanned<Stmt>, type_table: &TypeTable, var_table: &mut Va
             ))
         },
         Stmt::VarDeclare { mutable, ident, atype, value } => {
-            let (value, _) = wrap_expr(&value.asa, type_table, var_table)?; // wrap value
+            let (value, _) = wrap_expr(&value.asa, type_table, func_table, var_table)?; // wrap value
 
             // make sure the type annotations and type of the value are the same
             if let Some((atype, span)) = atype {
@@ -94,7 +94,7 @@ pub fn wrap_stmt(stmt: Spanned<Stmt>, type_table: &TypeTable, var_table: &mut Va
         },
         Stmt::If { cond, body, otherwise } => {
             // wrap the condition
-            let (cond, _) = wrap_expr(&cond.asa, type_table, var_table)?;
+            let (cond, _) = wrap_expr(&cond.asa, type_table, func_table, var_table)?;
 
             // make sure the condition is a boolean
             if cond.1 != Type::Bool {
@@ -102,9 +102,9 @@ pub fn wrap_stmt(stmt: Spanned<Stmt>, type_table: &TypeTable, var_table: &mut Va
             }
 
             // wrap the body and ifelse
-            let body = wrap_stmt(*body, type_table, var_table)?;
+            let body = wrap_stmt(*body, type_table, func_table, var_table)?;
             let ifelse = match otherwise {
-                Some(ifelse) => Some(Box::new(wrap_stmt(*ifelse, type_table, var_table)?)),
+                Some(ifelse) => Some(Box::new(wrap_stmt(*ifelse, type_table, func_table, var_table)?)),
                 None => None,
             };
 
@@ -116,7 +116,7 @@ pub fn wrap_stmt(stmt: Spanned<Stmt>, type_table: &TypeTable, var_table: &mut Va
         },
         Stmt::While { cond, body } => {
             // wrap the condition
-            let (cond, _) = wrap_expr(&cond.asa, type_table, var_table)?;
+            let (cond, _) = wrap_expr(&cond.asa, type_table, func_table, var_table)?;
 
             // make sure the condition is a boolean
             if cond.1 != Type::Bool {
@@ -124,7 +124,7 @@ pub fn wrap_stmt(stmt: Spanned<Stmt>, type_table: &TypeTable, var_table: &mut Va
             }
 
             // wrap the body
-            let body = wrap_stmt(*body, type_table, var_table)?;
+            let body = wrap_stmt(*body, type_table, func_table, var_table)?;
 
             // return valid while statement
             Ok((

@@ -1,6 +1,6 @@
 use ketchup::Span;
 use crate::lang::{error::typed::Error, parser::expr::Expr, typed::{expr::wrap_expr, symbol_table::TypeTable, types::Type}, Spanned};
-use super::{expr::TExpr, symbol_table::VarTable, types::Typed};
+use super::{expr::TExpr, symbol_table::{FuncTable, VarTable}, types::Typed};
 
 /// A tree representation of a builtin-function call
 #[derive(Debug)]
@@ -29,17 +29,17 @@ pub enum TBuiltinFnCall {
 }
 
 /// Add type annotations to builtin-function calls
-pub fn wrap_builtin(ident: &str, ident_span: Span, span: Span, args: &[Expr], type_table: &TypeTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
+pub fn wrap_builtin(ident: &str, ident_span: Span, span: Span, args: &[Expr], type_table: &TypeTable, func_table: &FuncTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
     match ident {
-        "println" => builtin_println(span, args, type_table, var_table),
-        "as_str" => builtin_as_str(span, args, type_table, var_table),
-        "input" => builtin_input(span, args, type_table, var_table),
+        "println" => builtin_println(span, args, type_table, func_table, var_table),
+        "as_str" => builtin_as_str(span, args, type_table, func_table, var_table),
+        "input" => builtin_input(span, args, type_table, func_table, var_table),
         "timer" => builtin_timer(span, args),
-        "panic" => builtin_panic(span, args, type_table, var_table),
-        "list_len" => builtin_list_len(span, args, type_table, var_table),
-        "list_get" => builtin_list_get(span, args, type_table, var_table),
-        "list_push" => builtin_list_push(span, args, type_table, var_table),
-        "list_insert" => builtin_list_insert(span, args, type_table, var_table),
+        "panic" => builtin_panic(span, args, type_table, func_table, var_table),
+        "list_len" => builtin_list_len(span, args, type_table, func_table, var_table),
+        "list_get" => builtin_list_get(span, args, type_table, func_table, var_table),
+        "list_push" => builtin_list_push(span, args, type_table, func_table, var_table),
+        "list_insert" => builtin_list_insert(span, args, type_table, func_table, var_table),
 
         // if the builtin function is not found, then return error
         _ => return Err(Error::BuiltinNotFound {
@@ -51,7 +51,7 @@ pub fn wrap_builtin(ident: &str, ident_span: Span, span: Span, args: &[Expr], ty
 }
 
 /// Add type annotations to `as_str` builtin-function calls
-fn builtin_as_str(span: Span, args: &[Expr], type_table: &TypeTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
+fn builtin_as_str(span: Span, args: &[Expr], type_table: &TypeTable, func_table: &FuncTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
     // make sure there's at least one argument
     if args.len() < 1 {
         return Err(Error::BuiltinLittleArgs {
@@ -70,7 +70,7 @@ fn builtin_as_str(span: Span, args: &[Expr], type_table: &TypeTable, var_table: 
     }
 
     // evaulate the argument and return it as a string
-    let ((arg, _), _) = wrap_expr(&args[0].asa, type_table, var_table)?;
+    let ((arg, _), _) = wrap_expr(&args[0].asa, type_table, func_table, var_table)?;
     Ok((
         TBuiltinFnCall::AsString(arg),
         Type::String,
@@ -93,7 +93,7 @@ fn builtin_timer(span: Span, args: &[Expr]) -> Result<Typed<TBuiltinFnCall>, Err
 }
 
 /// Add type annotations to `input` builtin-function calls
-fn builtin_input(span: Span, args: &[Expr], type_table: &TypeTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
+fn builtin_input(span: Span, args: &[Expr], type_table: &TypeTable, func_table: &FuncTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
     // make sure there's at least one argument
     if args.len() < 1 {
         return Err(Error::BuiltinLittleArgs {
@@ -112,7 +112,7 @@ fn builtin_input(span: Span, args: &[Expr], type_table: &TypeTable, var_table: &
     }
 
     // evaulate the argument and return the `input` call
-    let ((arg, _), _) = wrap_expr(&args[0].asa, type_table, var_table)?;
+    let ((arg, _), _) = wrap_expr(&args[0].asa, type_table, func_table, var_table)?;
     Ok((
         TBuiltinFnCall::Input(arg),
         Type::String,
@@ -120,7 +120,7 @@ fn builtin_input(span: Span, args: &[Expr], type_table: &TypeTable, var_table: &
 }
 
 /// Add type annotations to `println` builtin-function calls
-fn builtin_println(span: Span, args: &[Expr], type_table: &TypeTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
+fn builtin_println(span: Span, args: &[Expr], type_table: &TypeTable, func_table: &FuncTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
     // make sure there's only one or no arguments, otherwise, throw error
     if args.len() > 1 {
         return Err(Error::BuiltinManyArgs {
@@ -139,7 +139,7 @@ fn builtin_println(span: Span, args: &[Expr], type_table: &TypeTable, var_table:
     }
     
     // evaluate the first and *only* argument and make sure it's a string, otherwise throw error
-    let (arg, _) = wrap_expr(&args[0].asa, type_table, var_table)?;
+    let (arg, _) = wrap_expr(&args[0].asa, type_table, func_table, var_table)?;
     if arg.1 != Type::String {
         return Err(
             Error::BuiltinWrongType {
@@ -159,7 +159,7 @@ fn builtin_println(span: Span, args: &[Expr], type_table: &TypeTable, var_table:
 }
 
 /// Add type annotations to `println` builtin-function calls
-fn builtin_panic(span: Span, args: &[Expr], type_table: &TypeTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
+fn builtin_panic(span: Span, args: &[Expr], type_table: &TypeTable, func_table: &FuncTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
     // make sure there's only one or no arguments, otherwise, throw error
     if args.len() > 1 {
         return Err(Error::BuiltinManyArgs {
@@ -178,7 +178,7 @@ fn builtin_panic(span: Span, args: &[Expr], type_table: &TypeTable, var_table: &
     }
     
     // evaluate the first and *only* argument and make sure it's a string, otherwise throw error
-    let (arg, _) = wrap_expr(&args[0].asa, type_table, var_table)?;
+    let (arg, _) = wrap_expr(&args[0].asa, type_table, func_table, var_table)?;
     if arg.1 != Type::String {
         return Err(
             Error::BuiltinWrongType {
@@ -198,7 +198,7 @@ fn builtin_panic(span: Span, args: &[Expr], type_table: &TypeTable, var_table: &
 }
 
 /// Add type annotations to `list_len` builtin-function calls
-fn builtin_list_len(span: Span, args: &[Expr], type_table: &TypeTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
+fn builtin_list_len(span: Span, args: &[Expr], type_table: &TypeTable, func_table: &FuncTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
     // make sure there's at least one argument
     if args.len() < 1 {
         return Err(Error::BuiltinLittleArgs {
@@ -217,7 +217,7 @@ fn builtin_list_len(span: Span, args: &[Expr], type_table: &TypeTable, var_table
     }
 
     // wrap the expr and make sure it's of type list
-    let (expr, _) = wrap_expr(&args[0].asa, type_table, var_table)?;
+    let (expr, _) = wrap_expr(&args[0].asa, type_table, func_table, var_table)?;
     match expr.1 {
         Type::List(_) => (),
         _ => return Err(Error::BuiltinArgTypeMismatch {
@@ -236,7 +236,7 @@ fn builtin_list_len(span: Span, args: &[Expr], type_table: &TypeTable, var_table
 }
 
 /// Add type annotations to `list_get` builtin-function calls
-fn builtin_list_get(span: Span, args: &[Expr], type_table: &TypeTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
+fn builtin_list_get(span: Span, args: &[Expr], type_table: &TypeTable, func_table: &FuncTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
     // make sure there's at least two arguments
     if args.len() < 2 {
         return Err(Error::BuiltinLittleArgs {
@@ -255,7 +255,7 @@ fn builtin_list_get(span: Span, args: &[Expr], type_table: &TypeTable, var_table
     }
 
     // wrap the list expr
-    let (list_expr, _) = wrap_expr(&args[0].asa, type_table, var_table)?;
+    let (list_expr, _) = wrap_expr(&args[0].asa, type_table, func_table, var_table)?;
 
     // get the list type
     let Type::List(list_type) = list_expr.1
@@ -269,7 +269,7 @@ fn builtin_list_get(span: Span, args: &[Expr], type_table: &TypeTable, var_table
     };
 
     // wrap the index expr and make sure it's of type nubmer
-    let (idx_expr, _) = wrap_expr(&args[1].asa, type_table, var_table)?;
+    let (idx_expr, _) = wrap_expr(&args[1].asa, type_table, func_table, var_table)?;
     match idx_expr.1 {
         Type::Number => (),
         _ => return Err(Error::BuiltinArgTypeMismatch {
@@ -292,7 +292,7 @@ fn builtin_list_get(span: Span, args: &[Expr], type_table: &TypeTable, var_table
 }
 
 /// Add type annotations to `list_push` builtin-function calls
-fn builtin_list_push(span: Span, args: &[Expr], type_table: &TypeTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
+fn builtin_list_push(span: Span, args: &[Expr], type_table: &TypeTable, func_table: &FuncTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
     // make sure there's at least two arguments
     if args.len() < 2 {
         return Err(Error::BuiltinLittleArgs {
@@ -311,7 +311,7 @@ fn builtin_list_push(span: Span, args: &[Expr], type_table: &TypeTable, var_tabl
     }
 
     // wrap the list expr
-    let (list_expr, _) = wrap_expr(&args[0].asa, type_table, var_table)?;
+    let (list_expr, _) = wrap_expr(&args[0].asa, type_table, func_table, var_table)?;
 
     // get the list type
     let Type::List(list_type) = list_expr.1
@@ -325,7 +325,7 @@ fn builtin_list_push(span: Span, args: &[Expr], type_table: &TypeTable, var_tabl
     };
 
     // wrap the element expr and make sure it's of the right type
-    let (expr, _) = wrap_expr(&args[1].asa, type_table, var_table)?;
+    let (expr, _) = wrap_expr(&args[1].asa, type_table, func_table, var_table)?;
     if expr.1 != *list_type {
         return Err(Error::BuiltinArgTypeMismatch {
             span: expr.0.1,
@@ -346,7 +346,7 @@ fn builtin_list_push(span: Span, args: &[Expr], type_table: &TypeTable, var_tabl
 }
 
 /// Add type annotations to `list_insert` builtin-function calls
-fn builtin_list_insert(span: Span, args: &[Expr], type_table: &TypeTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
+fn builtin_list_insert(span: Span, args: &[Expr], type_table: &TypeTable, func_table: &FuncTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
     // make sure there's at least three arguments
     if args.len() < 3 {
         return Err(Error::BuiltinLittleArgs {
@@ -365,7 +365,7 @@ fn builtin_list_insert(span: Span, args: &[Expr], type_table: &TypeTable, var_ta
     }
 
     // wrap the list expr
-    let (list_expr, _) = wrap_expr(&args[0].asa, type_table, var_table)?;
+    let (list_expr, _) = wrap_expr(&args[0].asa, type_table, func_table, var_table)?;
 
     // get the list type
     let Type::List(list_type) = list_expr.1
@@ -379,7 +379,7 @@ fn builtin_list_insert(span: Span, args: &[Expr], type_table: &TypeTable, var_ta
     };
 
     // wrap the index expr and make sure it's of type nubmer
-    let (idx_expr, _) = wrap_expr(&args[1].asa, type_table, var_table)?;
+    let (idx_expr, _) = wrap_expr(&args[1].asa, type_table, func_table, var_table)?;
     match idx_expr.1 {
         Type::Number => (),
         _ => return Err(Error::BuiltinArgTypeMismatch {
@@ -391,7 +391,7 @@ fn builtin_list_insert(span: Span, args: &[Expr], type_table: &TypeTable, var_ta
     }
 
     // wrap the element expr and make sure it's of the right type
-    let (expr, _) = wrap_expr(&args[2].asa, type_table, var_table)?;
+    let (expr, _) = wrap_expr(&args[2].asa, type_table, func_table, var_table)?;
     if expr.1 != *list_type {
         return Err(Error::BuiltinArgTypeMismatch {
             span: expr.0.1,

@@ -104,9 +104,14 @@ pub enum Error {
         /// The location of the parameter
         ctx_span: Span,
     },
+    /// Occurs when a function definition is missing a return type
+    ExpectedFnRetrnType {
+        /// The location of the function def
+        ctx_span: Span,
+    },
     /// Occurs when a function definition is missing a body
     ExpectedFnBody {
-        /// The locatino of the function def
+        /// The location of the function def
         ctx_span: Span,
     },
 }
@@ -150,7 +155,8 @@ impl Reportable for KError<Error> {
                 E::ExpectedFnIdent { ctx_span } => ("expected identifier for function definition", span, "found this instead", ctx_span, "in these function parameters"),
                 E::ExpectedFnParamIdent { ctx_span } => ("expected identifier for function parameter", span, "found this instead", ctx_span, "in these function parameters"),
                 E::ExpectedFnParamColon { ctx_span } => ("expected `:` to separate the identifier and type", span, "found this instead", ctx_span, "in this function parameter"),
-                E::ExpectedFnBody { ctx_span } => ("expected one of `->`, `(`, `{`", span, "found this instead", ctx_span, "in function definition"),
+                E::ExpectedFnRetrnType { ctx_span } => ("expected one of `->`, `(`", span, "found this instead", ctx_span, "in this function definition"),
+                E::ExpectedFnBody { ctx_span } => ("expected body-block in function definition", span, "found this instead", ctx_span, "in this function definition"),
             },
         };
 

@@ -1,6 +1,6 @@
 use ketchup::node::Node;
 use crate::lang::{error::typed::Error, parser::expr::ExprOper, typed::{block, builtin, types::Type}, Spanned};
-use super::{block::TBlock, builtin::TBuiltinFnCall, symbol_table::{TypeTable, VarTable}, types::Typed};
+use super::{block::TBlock, builtin::TBuiltinFnCall, symbol_table::{FuncTable, TypeTable, VarTable}, types::Typed};
 
 /// A tree version of an expr for type annotation
 #[derive(Debug)]
@@ -40,7 +40,7 @@ pub enum TExpr {
 }
 
 /// Wraps an expr with types and also returns it's current location in the asa
-pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut VarTable) -> Result<(Typed<Spanned<TExpr>>, usize), Error> {
+pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, func_table: &FuncTable, var_table: &mut VarTable) -> Result<(Typed<Spanned<TExpr>>, usize), Error> {
     use ExprOper as EO;
 
     Ok(match &asa[0].oper {
@@ -52,7 +52,7 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
 
         // blocks
         EO::Block(block) => {
-            let (block, block_type) = block::wrap_block(block.clone(), type_table, var_table.spawn_scope())?;
+            let (block, block_type) = block::wrap_block(block.clone(), type_table,func_table, var_table.spawn_scope())?;
             (
                 (
                     (
@@ -72,7 +72,7 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
 
             // append the types stored in the tuple
             for expr in exprs {
-                let ((expr, ttype), _) = wrap_expr(&expr.asa, type_table, var_table)?;
+                let ((expr, ttype), _) = wrap_expr(&expr.asa, type_table,func_table, var_table)?;
                 types.push(ttype.clone());
                 typed_exprs.push((expr, ttype));
             }
@@ -105,7 +105,7 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
             // get the type of the first element in the list
             let (list_type, list_type_span, mut exprs) = match list.get(0) {
                 Some(expr) => {
-                    let ((expr, expr_type), _) = wrap_expr(&expr.asa, type_table, var_table)?;
+                    let ((expr, expr_type), _) = wrap_expr(&expr.asa, type_table,func_table, var_table)?;
                     (expr_type.clone(), expr.1.clone(), vec![expr])
                 },
                 None => (Type::Nil, asa[0].info.span.clone(), Vec::new()),
@@ -117,7 +117,7 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
                 if i == 0 { continue };
 
                 // wrap the expr make sure it's the right type
-                let (((expr, expr_span), expr_type), _) = wrap_expr(&expr.asa, type_table, var_table)?;
+                let (((expr, expr_span), expr_type), _) = wrap_expr(&expr.asa, type_table,func_table, var_table)?;
                 if expr_type != list_type {
                     return Err(Error::ListElementTypeMismatch { first_span: list_type_span, first_type: list_type, el_span: expr_span, el_type: expr_type });
                 }
@@ -141,7 +141,7 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
 
         // builtin-function calls
         EO::BuiltinFnCall { ident, ident_span, args } => {
-            let (call, ttype) = builtin::wrap_builtin(ident, ident_span.clone(), asa[0].info.span.clone(), &args, type_table, var_table)?;
+            let (call, ttype) = builtin::wrap_builtin(ident, ident_span.clone(), asa[0].info.span.clone(), &args, type_table,func_table, var_table)?;
             (
                 (
                     (
@@ -157,7 +157,7 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
         // negative & positive & not
         EO::Neg => {
             // wrap the sub-expr that this negates
-            let (expr, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            let (expr, idx) = wrap_expr(&asa[1..], type_table,func_table, var_table)?;
 
             // make sure it's a number, otherwise throw error
             if expr.1 != Type::Number {
@@ -184,7 +184,7 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
         },
         EO::Pos => {
             // wrap the sub-expr that this does nothing to
-            let (expr, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            let (expr, idx) = wrap_expr(&asa[1..], type_table,func_table, var_table)?;
 
             // make sure it's a number, otherwise throw error
             if expr.1 != Type::Number {
@@ -211,7 +211,7 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
         },
         EO::Not => {
             // wrap the sub-expr that this nots
-            let (expr, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            let (expr, idx) = wrap_expr(&asa[1..], type_table,func_table, var_table)?;
 
             // make sure it's a number, otherwise throw error
             if expr.1 != Type::Bool {
@@ -239,9 +239,9 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
         // arithmatic / maths
         EO::Add => {
             // wrap the left-hand side of this operation
-            let (lhs, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table,func_table, var_table)?;
             // wrap the rigth-hand side of this operation
-            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, var_table)?;
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table,func_table, var_table)?;
 
             // make sure lhs is of type number, otherwise throw error
             if lhs.1 != Type::Number {
@@ -278,9 +278,9 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
         },
         EO::Sub => {
             // wrap the left-hand side of this operation
-            let (lhs, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table,func_table, var_table)?;
             // wrap the rigth-hand side of this operation
-            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, var_table)?;
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table,func_table, var_table)?;
 
             // make sure lhs is of type number, otherwise throw error
             if lhs.1 != Type::Number {
@@ -317,9 +317,9 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
         },
         EO::Mul => {
             // wrap the left-hand side of this operation
-            let (lhs, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table,func_table, var_table)?;
             // wrap the rigth-hand side of this operation
-            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, var_table)?;
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table,func_table, var_table)?;
 
             // make sure lhs is of type number, otherwise throw error
             if lhs.1 != Type::Number {
@@ -356,9 +356,9 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
         },
         EO::Div => {
             // wrap the left-hand side of this operation
-            let (lhs, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table,func_table, var_table)?;
             // wrap the rigth-hand side of this operation
-            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, var_table)?;
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table,func_table, var_table)?;
 
             // make sure lhs is of type number, otherwise throw error
             if lhs.1 != Type::Number {
@@ -397,9 +397,9 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
         // A change of pace where only strings are allowed instead of numbers
         EO::Concat => {
             // wrap the left-hand side of this operation
-            let (lhs, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table,func_table, var_table)?;
             // wrap the rigth-hand side of this operation
-            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, var_table)?;
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table,func_table, var_table)?;
 
             // make sure lhs is of type string, otherwise throw error
             if lhs.1 != Type::String {
@@ -455,9 +455,9 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
 
         EO::EE => {
             // wrap the left-hand side of this operation
-            let (lhs, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table,func_table, var_table)?;
             // wrap the rigth-hand side of this operation
-            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, var_table)?;
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table,func_table, var_table)?;
 
             // get the type of lhs and make sure it's the same as the rhs
             if lhs.1 != rhs.1 {
@@ -484,9 +484,9 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
         },
         EO::NE => {
             // wrap the left-hand side of this operation
-            let (lhs, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table,func_table, var_table)?;
             // wrap the rigth-hand side of this operation
-            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, var_table)?;
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table,func_table, var_table)?;
 
             // get the type of lhs and make sure it's the same as the rhs
             if lhs.1 != rhs.1 {
@@ -513,9 +513,9 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
         },
         EO::GT => {
             // wrap the left-hand side of this operation
-            let (lhs, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table,func_table, var_table)?;
             // wrap the rigth-hand side of this operation
-            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, var_table)?;
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table,func_table, var_table)?;
 
             // get the type of lhs and make sure it's the same as the rhs
             if lhs.1 != rhs.1 {
@@ -542,9 +542,9 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
         },
         EO::LT => {
             // wrap the left-hand side of this operation
-            let (lhs, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table,func_table, var_table)?;
             // wrap the rigth-hand side of this operation
-            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, var_table)?;
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table,func_table, var_table)?;
 
             // get the type of lhs and make sure it's the same as the rhs
             if lhs.1 != rhs.1 {
@@ -571,9 +571,9 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
         },
         EO::GTE => {
             // wrap the left-hand side of this operation
-            let (lhs, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table,func_table, var_table)?;
             // wrap the rigth-hand side of this operation
-            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, var_table)?;
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table,func_table, var_table)?;
 
             // get the type of lhs and make sure it's the same as the rhs
             if lhs.1 != rhs.1 {
@@ -600,9 +600,9 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
         },
         EO::LTE => {
             // wrap the left-hand side of this operation
-            let (lhs, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table,func_table, var_table)?;
             // wrap the rigth-hand side of this operation
-            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, var_table)?;
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table,func_table, var_table)?;
 
             // get the type of lhs and make sure it's the same as the rhs
             if lhs.1 != rhs.1 {
@@ -629,9 +629,9 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
         },
         EO::And => {
             // wrap the left-hand side of this operation
-            let (lhs, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table,func_table, var_table)?;
             // wrap the rigth-hand side of this operation
-            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, var_table)?;
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table,func_table, var_table)?;
 
             // make sure lhs is of type bool, otherwise throw error
             if lhs.1 != Type::Bool {
@@ -666,9 +666,9 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, var_table: &mut
         },
         EO::Or => {
             // wrap the left-hand side of this operation
-            let (lhs, idx) = wrap_expr(&asa[1..], type_table, var_table)?;
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table,func_table, var_table)?;
             // wrap the rigth-hand side of this operation
-            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, var_table)?;
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table,func_table, var_table)?;
 
             // make sure lhs is of type bool, otherwise throw error
             if lhs.1 != Type::Bool {

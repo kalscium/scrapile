@@ -1,11 +1,18 @@
 use std::collections::HashMap;
 use ketchup::Span;
-use super::types::Type;
+use crate::lang::Spanned;
+use super::{function::FuncSignature, types::Type};
 
 /// A hashmap of all the types in a project, the key is the identifier of the type, each type is another hashmap of string property identifiers corresponding to a `u32` unique identifier and a type for that property
 #[derive(Debug)]
 pub struct TypeTable(
     pub HashMap<String, HashMap<String, (u32, Type)>>,
+);
+
+/// A hashmap of all the functions available in a project, the key is the identifier of the function
+#[derive(Debug, Clone)]
+pub struct FuncTable(
+    pub HashMap<String, Spanned<FuncSignature>>,
 );
 
 /// A hashmap of all the variables in a given scope
