@@ -1,7 +1,6 @@
 use ariadne::{Color, Label, Report, ReportKind, Source};
 use ketchup::Span;
 use crate::lang::typed::types::Type;
-
 use super::Reportable;
 
 /// Type errors for scrapile
@@ -76,6 +75,34 @@ pub enum Error {
         call_span: Span,
     },
 
+    /// Occurs when you try to call a function that doesn't exist
+    FuncNotFound {
+        /// The span of the function ident
+        ident_span: Span,
+
+        /// The identifier of the function
+        ident: String,
+
+        /// The span of the function call
+        call_span: Span,
+    },
+
+    /// Occurs when a function call's argument is of the wrong type
+    FuncCallTypeMismatch {
+        /// The span of the function's parameter
+        param_span: Span,
+        /// The span of the function definition
+        func_span: Span,
+        /// The span of the function call
+        call_span: Span,
+        /// The span of the call's argument
+        arg_span: Span,
+        /// The type of the argument expr
+        arg_type: Type,
+        /// The type of the parameter
+        param_type: Type,
+    },
+
     /// Occurs when you try to run a builtin function with too many arguments
     BuiltinManyArgs {
         /// The span of the builtin-function call
@@ -95,6 +122,18 @@ pub enum Error {
 
         /// The min arguments a builtin-fn-call can have
         min: std::ops::Range<usize>,
+    },
+
+    /// Occurs when you try to call a function with the incorrect amount of arguments
+    CallArgsAmount {
+        /// The span of the function call
+        call_span: Span,
+        /// The expected amount of arguments
+        amount: usize,
+        /// The amount of arguments given
+        given_amount: usize,
+        /// The span of the parameter definition
+        param_span: Span,
     },
 
     /// Occurs when there is an incorrectly typed argument o a builtin function
@@ -223,10 +262,12 @@ impl Reportable for Error {
             E::NotBoolean { oper_span, value_span, value_type } => ("cannot perform boolean operations on non-booleans", oper_span, format!("cannot perform bool-oper on an expr of type `{value_type}`"), value_span, format!("expected an expr of type `bool`, instead found an expr of type `{value_type}`")),
             E::BuiltinManyArgs { call_span, max, arg_span } => ("unexpected builtin-function argument (too many args)", arg_span, "unexpected argument".to_string(), call_span, format!("builtin-func only expected {max:?} args")),
             E::BuiltinLittleArgs { call_span, min } => ("expected a builtin-function argument (too little args)", &(call_span.end-1..call_span.end), "expected an argument".to_string(), call_span, format!("builtin-func expected {min:?} args")),
+            E::CallArgsAmount { call_span, amount, given_amount, param_span } => ("function called with an incorrect amount of arguments", call_span, format!("expected {amount} arguments, found {given_amount} instead"), param_span, "function parameters defined here".to_string()),
             E::BuiltinWrongType { call_span, expected, arg_type, arg_span } => ("builtin function's argument is of an incorrect type", arg_span, format!("expected an expr of type `{expected}`, instead found an expr of type `{arg_type}`",), call_span, "occured in this builtin-func call".to_string()),
             E::MultipleMain { first_span, additional_span } => ("multiple main procedure definitions are not allowed", additional_span, "unexpected second main procedure definition".to_string(), first_span, "first main procedure defined here".to_string()),
             E::MultipleFunc { first_span, additional_span } => ("function was defined multiple times", additional_span, "unexpected second definition".to_string(), first_span, "function was defined first here".to_string()),
             E::TypeNotFound { span } => ("type not found", span, "this type was not found in the project".to_string(), span, "it may be a typo or otherwise consider adding it or importing it".to_string()),
+            E::FuncNotFound { ident_span, ident, call_span } => ("called function not found in scope", ident_span, format!("no function called '{ident}' found"), call_span, "in this function call".to_string()),
             E::VarTypeMismatch { span, type_span, expr_type, var_type } => ("variable assigned to with a value of the wrong type", span, format!("this expr is of the wrong type, expected an expr of type `{var_type}`, instead found an expr of type `{expr_type}`"), type_span, format!("variable's type `{var_type}` determined here")),
             E::RetrnTypeMismatch { span, type_span, expr_type, retrn_type } => ("function body-block returns an expr of the wrong type", span, format!("this expr is of the wrong type, expected an expr of type `{retrn_type}`, instead found an expr of type `{expr_type}`"), type_span, format!("function's return-type `{retrn_type}` defined here")),
             E::VarNotFound { span } => ("variable not found", span, "this variable was not found in the current scope".to_string(), span, "it may be a typo or otherwise consider adding a variable of that name".to_string()),
@@ -262,10 +303,39 @@ impl Reportable for Error {
                             .with_message(format!("no builtin-func was found with the name '{ident}'"))
                             .with_color(Color::BrightBlue),
                     )
-                    .with_help("available builtin-funcs include: 'println'")
+                    .with_help("available builtin-funcs include: 'println', 'as_str', 'input', 'timer', 'panic', 'list_len', 'list_get', 'list_push' and 'list_insert'")
                     .finish()
                     .eprint((src_id, Source::from(src)))
                     .unwrap();
+            },
+
+            E::FuncCallTypeMismatch { func_span, param_span, call_span, arg_span, arg_type, param_type } => {
+                return report
+                    .with_message("function called with an argument of the wrong type")
+                    .with_label(
+                        Label::new((src_id, arg_span.clone()))
+                            .with_message("argument is of the wrong type")
+                            .with_message(format!("expected an argument of type '{param_type}', found an expr of type '{arg_type}'"))
+                            .with_color(Color::Red),
+                    )
+                    .with_label(
+                        Label::new((src_id, call_span.clone()))
+                            .with_message("in this function call")
+                            .with_color(Color::BrightBlue),
+                    )
+                    .with_label(
+                        Label::new((src_id, param_span.clone()))
+                            .with_message("parameter type defined here")
+                            .with_color(Color::Yellow),
+                    )
+                    .with_label(
+                        Label::new((src_id, func_span.clone()))
+                            .with_message("due to this function definition")
+                            .with_color(Color::BrightBlue),
+                    )
+                .finish()
+                .eprint((src_id, Source::from(src)))
+                .unwrap();
             },
 
             E::OperationTypeMismatch { lhs_span, lhs_type, oper_span, rhs_span, rhs_type } => {

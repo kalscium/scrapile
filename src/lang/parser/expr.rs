@@ -39,7 +39,7 @@ pub enum ExprOper {
 
     Tuple(Vec<Expr>),
     List(Vec<Expr>),
-    Call(String, Vec<Expr>),
+    Call(Spanned<String>, Vec<Expr>),
     BuiltinFnCall {
         ident: String,
         ident_span: Span,
@@ -78,7 +78,7 @@ fn parse_call_or_ident(ident: String, tokens: &mut SpannedIter<'_, Token>) -> Re
             // if there is a function call then parse the arguments of it
             let (args, span) = super::tuple::parse_tuple(tokens)?;
             return Ok((OperInfo {
-                oper: ExprOper::Call(ident, args),
+                oper: ExprOper::Call((ident, start_span.clone()), args),
                 span: start_span.start..span.end,
                 space: Space::None,
                 precedence: 0,

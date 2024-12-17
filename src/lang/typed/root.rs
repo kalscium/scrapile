@@ -21,12 +21,12 @@ pub fn wrap_root(roots: &Roots) -> Result<Project, Error> {
     for func in roots.funcs.iter() {
         let signature = (FuncSignature {
             params: func.0.params.iter()
-                .map(|((_, ptype), span)| (ptype.clone(), span.clone()))
+                .map(|((ident, ptype), span)| ((ident.clone(), ptype.clone()), span.clone()))
                 .collect::<Vec<_>>(),
             retrn_type: func.0.retrn_type.clone(),
         }, func.1.clone());
 
-        // insert and also check for duplicate function func.0initions
+        // insert and also check for duplicate function definitions
         if let Some(old) = func_table.0.insert(func.0.ident.clone(), signature) {
             return Err(Error::MultipleFunc {
                 first_span: old.1,
