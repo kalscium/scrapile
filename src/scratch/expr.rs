@@ -32,6 +32,13 @@ pub enum Expr {
         idx: Box<Expr>,
     },
     ListLength { ident: String },
+
+    // string operations
+    StringElement {
+        string: Box<Expr>,
+        idx: Box<Expr>,
+    },
+    StringLength { string: Box<Expr> },
 }
 
 /// Parses a scratch expression and outputs the generated json
@@ -234,6 +241,48 @@ pub(super) fn parse_expr(expr: Expr, expr_blocks: &mut Vec<JsonValue>) -> JsonVa
                         "",
                     ],
                 },
+            };
+            expr_blocks.push(json);
+
+            expr_idx_to_id(expr_blocks.len()-1).into()
+        }
+
+        // string operations
+        E::StringElement { string, idx } => {
+            let json = object! {
+                opcode: "operator_letter_of",
+                next: null,
+                parent: null,
+                inputs: {
+                    LETTER: [
+                        1,
+                        parse_expr((*idx).clone(), expr_blocks),
+                    ],
+                    STRING: [
+                        1,
+                        parse_expr((*string).clone(), expr_blocks),
+                    ],
+                },
+                fields: {},
+                shadow: false,
+                topLevel: false,
+            };
+            expr_blocks.push(json);
+
+            expr_idx_to_id(expr_blocks.len()-1).into()
+        },
+        E::StringLength { string } => {
+            let json = object! {
+                opcode: "operator_length",
+                next: null,
+                parent: null,
+                inputs: {
+                    STRING: [
+                        1,
+                        parse_expr((*string).clone(), expr_blocks),
+                    ],
+                },
+                fields: {},
             };
             expr_blocks.push(json);
 

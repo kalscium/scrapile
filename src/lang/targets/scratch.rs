@@ -534,6 +534,27 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) -> 
                     // return nill
                     Expr::String(NIL.to_string())
                 },
+
+                // string operations
+
+                // convert the `str_len` builtin to it's scratch counterpart
+                B::StringLen(expr) => {
+                    // translate the string expr
+                    let expr = texpr(expr.0, stmts, tmp_binds);
+                    // return the operation on that string
+                    Expr::StringLength { string: Box::new(expr) }
+                },
+                B::StringGet { string, idx, .. } => {
+                    // translate the string and index exprs
+                    let idx = texpr(idx.0, stmts, tmp_binds);
+                    let expr = texpr(string.0, stmts, tmp_binds);
+
+                    // increment the idx by one (strings and lists are 1-based)
+                    let idx = Expr::Add(Box::new(idx), Box::new(Expr::PosInteger(1)));
+
+                    // return the operation on that string
+                    Expr::StringElement { string: Box::new(expr), idx: Box::new(idx) }
+                },
             }
         },
 

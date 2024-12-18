@@ -26,6 +26,12 @@ pub enum TBuiltinFnCall {
         idx: Spanned<TExpr>,
         expr: Spanned<TExpr>,
     },
+    StringLen(Spanned<TExpr>),
+    StringGet {
+        span: Span,
+        string: Spanned<TExpr>,
+        idx: Spanned<TExpr>,
+    },
 }
 
 /// Add type annotations to builtin-function calls
@@ -40,6 +46,8 @@ pub fn wrap_builtin(ident: &str, ident_span: Span, span: Span, args: &[Expr], ty
         "list_get" => builtin_list_get(span, args, type_table, func_table, var_table),
         "list_push" => builtin_list_push(span, args, type_table, func_table, var_table),
         "list_insert" => builtin_list_insert(span, args, type_table, func_table, var_table),
+        "str_len" => builtin_str_len(span, args, type_table, func_table, var_table),
+        "str_get" => builtin_str_get(span, args, type_table, func_table, var_table),
 
         // if the builtin function is not found, then return error
         _ => return Err(Error::BuiltinNotFound {
@@ -410,5 +418,99 @@ fn builtin_list_insert(span: Span, args: &[Expr], type_table: &TypeTable, func_t
             expr: expr.0,
         },
         Type::Nil,
+    ))
+}
+
+/// Add type annotations to `str_len` builtin-function calls
+fn builtin_str_len(span: Span, args: &[Expr], type_table: &TypeTable, func_table: &FuncTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
+    // make sure there's at least one argument
+    if args.len() < 1 {
+        return Err(Error::BuiltinLittleArgs {
+            call_span: span,
+            min: 1..2,
+        });
+    }
+
+    // make sure there's only one argument
+    if args.len() > 1 {
+        return Err(Error::BuiltinManyArgs {
+            call_span: span,
+            max: 1..2,
+            arg_span: args[1].span.clone(),
+        });
+    }
+
+    // wrap the expr and make sure it's of type str
+    let (expr, _) = wrap_expr(&args[0].asa, type_table, func_table, var_table)?;
+    match expr.1 {
+        Type::String => (),
+        _ => return Err(Error::BuiltinArgTypeMismatch {
+            span: expr.0.1,
+            param_type: Type::String,
+            arg_type: expr.1,
+            call_span: span,
+        }),
+    }
+
+    // return completed builtin-fn call
+    Ok((
+        TBuiltinFnCall::StringLen(expr.0),
+        Type::Number,
+    ))
+}
+
+/// Add type annotations to `str_get` builtin-function calls
+fn builtin_str_get(span: Span, args: &[Expr], type_table: &TypeTable, func_table: &FuncTable, var_table: &mut VarTable) -> Result<Typed<TBuiltinFnCall>, Error> {
+    // make sure there's at least two arguments
+    if args.len() < 2 {
+        return Err(Error::BuiltinLittleArgs {
+            call_span: span,
+            min: 2..3,
+        });
+    }
+
+    // make sure there's only two arguments
+    if args.len() > 2 {
+        return Err(Error::BuiltinManyArgs {
+            call_span: span,
+            max: 2..3,
+            arg_span: args[2].span.clone(),
+        });
+    }
+
+    // wrap the str expr
+    let (str_expr, _) = wrap_expr(&args[0].asa, type_table, func_table, var_table)?;
+
+    // make sure it's of type string
+    let Type::String = str_expr.1
+    else {
+        return Err(Error::BuiltinArgTypeMismatch {
+            span: str_expr.0.1,
+            param_type: Type::String,
+            arg_type: str_expr.1,
+            call_span: span,
+        });
+    };
+
+    // wrap the index expr and make sure it's of type nubmer
+    let (idx_expr, _) = wrap_expr(&args[1].asa, type_table, func_table, var_table)?;
+    match idx_expr.1 {
+        Type::Number => (),
+        _ => return Err(Error::BuiltinArgTypeMismatch {
+            span: idx_expr.0.1,
+            param_type: Type::Number,
+            arg_type: idx_expr.1,
+            call_span: span,
+        }),
+    }
+
+    // return completed builtin-fn call
+    Ok((
+        TBuiltinFnCall::StringGet {
+            span,
+            string: str_expr.0,
+            idx: idx_expr.0,
+        },
+        Type::String,
     ))
 }

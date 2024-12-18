@@ -1,7 +1,7 @@
 <<< V1 >>>
-- string builtin functions
 - guard statements
 - basic cli
+- write a brain-fuck interpreter in it
 
 <<< V2 >>>
 - bracket parser (also lists)
