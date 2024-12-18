@@ -1,6 +1,4 @@
 <<< V1 >>>
-- guard statements
-- basic cli
 - write a brain-fuck interpreter in it
 
 <<< V2 >>>
