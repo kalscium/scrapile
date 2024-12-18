@@ -15,11 +15,46 @@ pub fn parse_var_mutate(tokens: &mut SpannedIter<'_, Token>) -> Result<(Spanned<
         _ => return Err(vec![KError::Other(tokens.span(), Error::ExpectedIdent { ctx_span: start_span })])
     };
 
-    // check for the `=` token
+    // check for the `(*)=` tokens
     match tokens.next() {
-        Some((Ok(Token::EQ), _)) => (),
-        Some((Err(err), span)) => return Err(vec![KError::Other(span, err)]),
+        Some((Ok(Token::EQ), _)) => (), // vanilla `=`
 
+        // maths operations
+        Some((Ok(Token::AddEq), _)) => {
+            // get variable value
+            let (value, next_tok) = parse_expr(tokens.next(), tokens)?;
+
+            // return variable mutation statement
+            let span = start_span.start..value.span.end;
+            return Ok(((Stmt::VarMutateAdd { ident, value }, span), next_tok.map(|(tok, span)| (Ok(tok), span))));
+        },
+        Some((Ok(Token::SubEq), _)) => {
+            // get variable value
+            let (value, next_tok) = parse_expr(tokens.next(), tokens)?;
+
+            // return variable mutation statement
+            let span = start_span.start..value.span.end;
+            return Ok(((Stmt::VarMutateSub { ident, value }, span), next_tok.map(|(tok, span)| (Ok(tok), span))));
+        },
+        Some((Ok(Token::MulEq), _)) => {
+            // get variable value
+            let (value, next_tok) = parse_expr(tokens.next(), tokens)?;
+
+            // return variable mutation statement
+            let span = start_span.start..value.span.end;
+            return Ok(((Stmt::VarMutateMul { ident, value }, span), next_tok.map(|(tok, span)| (Ok(tok), span))));
+        },
+        Some((Ok(Token::DivEq), _)) => {
+            // get variable value
+            let (value, next_tok) = parse_expr(tokens.next(), tokens)?;
+
+            // return variable mutation statement
+            let span = start_span.start..value.span.end;
+            return Ok(((Stmt::VarMutateDiv { ident, value }, span), next_tok.map(|(tok, span)| (Ok(tok), span))));
+        },
+
+        // errors
+        Some((Err(err), span)) => return Err(vec![KError::Other(span, err)]),
         _ => return Err(vec![KError::Other(tokens.span(), Error::ExpectedEQ { ctx_span: start_span })])
     }
 

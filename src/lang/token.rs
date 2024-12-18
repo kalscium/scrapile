@@ -19,12 +19,6 @@ pub enum Token {
     Bool(bool),
 
     // Symbols
-    #[token("+")]
-    Plus,
-    #[token("*")]
-    Star,
-    #[token("/")]
-    Slash,
     #[token(".")]
     Dot,
     #[token("&&")]
@@ -42,6 +36,28 @@ pub enum Token {
     #[token("<>")]
     Concat,
 
+    // Maths operations
+    #[token("+")]
+    Plus,
+    #[token("+=")]
+    AddEq,
+    #[token("*")]
+    Star,
+    #[token("*=")]
+    MulEq,
+    #[token("/")]
+    Slash,
+    #[token("/=")]
+    DivEq,
+
+    // `-` symbols
+    #[token("-")]
+    Minus,
+    #[token("-=")]
+    SubEq,
+    #[token("->")]
+    Arrw,
+
     // Comparisions
     #[token(">")]
     GT,
@@ -51,12 +67,6 @@ pub enum Token {
     GTE,
     #[token("<=")]
     LTE,
-
-    // `-` symbols
-    #[token("-")]
-    Minus,
-    #[token("->")]
-    Arrw,
 
     // `=` symbols
     #[token("=")]

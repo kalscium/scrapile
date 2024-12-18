@@ -22,6 +22,30 @@ pub enum Stmt {
         value: Expr,
     },
 
+    /// A variable mutation that adds to the current value
+    VarMutateAdd {
+        ident: (String, Span),
+        value: Expr,
+    },
+
+    /// A variable mutation that subtracts from the current value
+    VarMutateSub {
+        ident: (String, Span),
+        value: Expr,
+    },
+
+    /// A variable mutation that multiplies the current value
+    VarMutateMul {
+        ident: (String, Span),
+        value: Expr,
+    },
+
+    /// A variable mutation that divides the current value
+    VarMutateDiv {
+        ident: (String, Span),
+        value: Expr,
+    },
+
     /// An if statement
     If {
         cond: Expr,

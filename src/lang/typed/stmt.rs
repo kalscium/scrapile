@@ -16,7 +16,7 @@ pub enum TStmt {
     /// A variable mutation with `mut`
     VarMutate {
         ident: String,
-        value: Typed<Spanned<TExpr>>,
+        value: Typed<TExpr>,
     },
 
     /// An if statement
@@ -61,6 +61,118 @@ pub fn wrap_stmt(stmt: Spanned<Stmt>, type_table: &TypeTable, func_table: &FuncT
             if value.1 != var_type {
                 return Err(Error::VarTypeMismatch { span: value.0.1, type_span: var_span, expr_type: value.1, var_type });
             }
+
+            // return valid variable mutation
+            Ok((
+                TStmt::VarMutate { ident: var_ident, value: (value.0.0, value.1) },
+                Type::Nil
+            ))
+        },
+        Stmt::VarMutateAdd { ident, value } => {
+            let (value, _) = wrap_expr(&value.asa, type_table, func_table, var_table)?; // wrap value
+
+            // make sure the variable exists and if so, get the type of it
+            let (var_ident, var_type, mutable, var_span) = match var_table.get(&ident.0) {
+                Some((ident, entry)) => (ident, entry.var_type.clone(), entry.mutable, entry.span.clone()),
+                None => return Err(Error::VarNotFound { span: ident.1 }),
+            };
+
+            // make sure the variable is mutable in the first place
+            if !mutable {
+                return Err(Error::AssignToImmutable { var_span, span });
+            }
+            
+            // make sure the type of the variable and the type of the value are the same, otherwise throw error
+            if value.1 != var_type {
+                return Err(Error::VarTypeMismatch { span: value.0.1, type_span: var_span, expr_type: value.1, var_type });
+            }
+
+            // apply the operation
+            let value = (TExpr::Add(Box::new(((TExpr::VarGet { ident: var_ident.clone(), var_type: value.1.clone() }, value.0.1.clone()), value.1.clone())), Box::new(value)), var_type);
+
+            // return valid variable mutation
+            Ok((
+                TStmt::VarMutate { ident: var_ident, value },
+                Type::Nil
+            ))
+        },
+        Stmt::VarMutateSub { ident, value } => {
+            let (value, _) = wrap_expr(&value.asa, type_table, func_table, var_table)?; // wrap value
+
+            // make sure the variable exists and if so, get the type of it
+            let (var_ident, var_type, mutable, var_span) = match var_table.get(&ident.0) {
+                Some((ident, entry)) => (ident, entry.var_type.clone(), entry.mutable, entry.span.clone()),
+                None => return Err(Error::VarNotFound { span: ident.1 }),
+            };
+
+            // make sure the variable is mutable in the first place
+            if !mutable {
+                return Err(Error::AssignToImmutable { var_span, span });
+            }
+            
+            // make sure the type of the variable and the type of the value are the same, otherwise throw error
+            if value.1 != var_type {
+                return Err(Error::VarTypeMismatch { span: value.0.1, type_span: var_span, expr_type: value.1, var_type });
+            }
+
+            // apply the operation
+            let value = (TExpr::Sub(Box::new(((TExpr::VarGet { ident: var_ident.clone(), var_type: value.1.clone() }, value.0.1.clone()), value.1.clone())), Box::new(value)), var_type);
+
+            // return valid variable mutation
+            Ok((
+                TStmt::VarMutate { ident: var_ident, value },
+                Type::Nil
+            ))
+        },
+        Stmt::VarMutateMul { ident, value } => {
+            let (value, _) = wrap_expr(&value.asa, type_table, func_table, var_table)?; // wrap value
+
+            // make sure the variable exists and if so, get the type of it
+            let (var_ident, var_type, mutable, var_span) = match var_table.get(&ident.0) {
+                Some((ident, entry)) => (ident, entry.var_type.clone(), entry.mutable, entry.span.clone()),
+                None => return Err(Error::VarNotFound { span: ident.1 }),
+            };
+
+            // make sure the variable is mutable in the first place
+            if !mutable {
+                return Err(Error::AssignToImmutable { var_span, span });
+            }
+            
+            // make sure the type of the variable and the type of the value are the same, otherwise throw error
+            if value.1 != var_type {
+                return Err(Error::VarTypeMismatch { span: value.0.1, type_span: var_span, expr_type: value.1, var_type });
+            }
+
+            // apply the operation
+            let value = (TExpr::Mul(Box::new(((TExpr::VarGet { ident: var_ident.clone(), var_type: value.1.clone() }, value.0.1.clone()), value.1.clone())), Box::new(value)), var_type);
+
+            // return valid variable mutation
+            Ok((
+                TStmt::VarMutate { ident: var_ident, value },
+                Type::Nil
+            ))
+        },
+        Stmt::VarMutateDiv { ident, value } => {
+            let (value, _) = wrap_expr(&value.asa, type_table, func_table, var_table)?; // wrap value
+
+            // make sure the variable exists and if so, get the type of it
+            let (var_ident, var_type, mutable, var_span) = match var_table.get(&ident.0) {
+                Some((ident, entry)) => (ident, entry.var_type.clone(), entry.mutable, entry.span.clone()),
+                None => return Err(Error::VarNotFound { span: ident.1 }),
+            };
+
+            // make sure the variable is mutable in the first place
+            if !mutable {
+                return Err(Error::AssignToImmutable { var_span, span });
+            }
+            
+            // make sure the type of the variable and the type of the value are the same, otherwise throw error
+            if value.1 != var_type {
+                return Err(Error::VarTypeMismatch { span: value.0.1, type_span: var_span, expr_type: value.1, var_type });
+            }
+
+            // apply the operation
+            let value = (TExpr::Div(Box::new(((TExpr::VarGet { ident: var_ident.clone(), var_type: value.1.clone() }, value.0.1.clone()), value.1.clone())), Box::new(value)), var_type);
 
             // return valid variable mutation
             Ok((

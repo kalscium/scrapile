@@ -4,8 +4,8 @@ fn sum(list: [num]) -> num {
     var mut i = 0;
 
     while (i < list_len!(list)) {
-        mut sum = sum + list_get!(list, i);
-        mut i = i + 1;
+        mut sum += list_get!(list, i);
+        mut i += 1;
     };
 
     sum
@@ -76,7 +76,8 @@ main {
     var mut i = 0;
     while (i < list_len!(list)) {
         println!("item " <> as_str!(i) <> " of list: " <> list_get!(list, i));
-        mut i = i + 1;
+        mut i += 1; # some special maths mutation syntax
+        mut i += "nice";
     };
 
     // lets try an 'out of bounds' list index

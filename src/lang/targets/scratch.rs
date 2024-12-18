@@ -133,7 +133,7 @@ pub fn tstmt(stmt: TStmt, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) {
                 stmts.push(Statement::ClearList { ident: ident.clone() });
 
                 // translate the list to a var-get
-                let list = tlist(value.0.0, stmts, tmp_binds);
+                let list = tlist(value.0, stmts, tmp_binds);
 
                 // wipe the output list beforehand
                 stmts.push(Statement::ClearList { ident: ident.clone() });
@@ -158,7 +158,7 @@ pub fn tstmt(stmt: TStmt, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) {
                     ],
                 })
             } else {
-                let stmt = Statement::SetVar { ident, value: texpr(value.0.0, stmts, tmp_binds) };
+                let stmt = Statement::SetVar { ident, value: texpr(value.0, stmts, tmp_binds) };
                 stmts.push(stmt);
             }
         },

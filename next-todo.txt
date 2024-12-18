@@ -1,6 +1,5 @@
 <<< V1 >>>
 - string builtin functions
-- += -= *= /=
 - guard statements
 - basic cli
 
