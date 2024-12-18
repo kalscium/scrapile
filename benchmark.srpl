@@ -1,14 +1,19 @@
 main {
-	let start_time = timer!();
+	var start_time = timer!();
 
 	#################
 	# Program Start #
 	#################
 
+	var mut i = 0;
+	var num = 10000000;
+	while (i < num)
+		mut i += 1;
+
 	#################
 	#  Program End  #
 	#################
 
-	let end_time = timer!();
+	var end_time = timer!();
 	println!("program took " <> as_str!(end_time - start_time) <> "s to complete");
 }
