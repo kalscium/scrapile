@@ -113,6 +113,44 @@ pub(super) fn parse_stmt(stmt: Statement, expr_blocks: &mut Vec<JsonValue>) -> J
                 },
             }
         },
+        S::ReplaceList { ident, value, idx } => {
+            object! {
+                opcode: "data_replaceitemoflist",
+                inputs: {
+                    ITEM: [
+                        1,
+                        parse_expr(value.clone(), expr_blocks),
+                    ],
+                    INDEX: [
+                        1,
+                        parse_expr(idx.clone(), expr_blocks),
+                    ],
+                },
+                fields: {
+                    LIST: [
+                        ident,
+                        "",
+                    ],
+                },
+            }
+        },
+        S::RemoveList { ident, idx } => {
+            object! {
+                opcode: "data_deleteoflist",
+                inputs: {
+                    INDEX: [
+                        1,
+                        parse_expr(idx.clone(), expr_blocks),
+                    ],
+                },
+                fields: {
+                    LIST: [
+                        ident,
+                        ""
+                    ],
+                },
+            }
+        },
         S::SetVar { ident, value } => {
             object! {
                 opcode: "data_setvariableto",
@@ -216,6 +254,5 @@ pub(super) fn parse_stmt(stmt: Statement, expr_blocks: &mut Vec<JsonValue>) -> J
                 fields: {},
             }
         },
-        _ => todo!(),
     }
 }
