@@ -778,6 +778,13 @@ pub fn texpr(expr: TExpr, stmts: &mut Vec<Statement>, tmp_binds: &mut usize) -> 
 
             Expr::Div(Box::new(lhs), Box::new(rhs))
         },
+        E::Mod(lhs, rhs) => {
+            let (((lhs, _), _), ((rhs, _), _)) = (*lhs, *rhs);
+
+            let lhs = texpr(lhs, stmts, tmp_binds);
+            let rhs = texpr(rhs, stmts, tmp_binds);
+            Expr::Mod(Box::new(lhs), Box::new(rhs))
+        },
 
         // Getting Variables
         E::VarGet { ident, var_type } => {

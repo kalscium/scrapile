@@ -21,6 +21,7 @@ pub enum ExprOper {
     Sub,
     Mul,
     Div,
+    Modulo,
     Concat,
     DotAccess,
 
@@ -193,9 +194,10 @@ fn oper_generator(token: Token, tokens: &mut SpannedIter<'_, Token>, double_spac
         (T::Minus, false) => (2, Space::Single, E::Neg),
         (T::Not, false) => (2, Space::Single, E::Not),
 
-        // multiplication & division
+        // multiplication, division & modulo
         (T::Star, _) => (3, Space::Double, E::Mul),
         (T::Slash, _) => (3, Space::Double, E::Div),
+        (T::Modulo, _) => (3, Space::Double, E::Modulo),
 
         // addition & subtraction
         (T::Plus, true) => (4, Space::Double, E::Add),

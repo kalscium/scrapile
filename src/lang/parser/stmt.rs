@@ -46,6 +46,12 @@ pub enum Stmt {
         value: Expr,
     },
 
+    /// A variable mutation that modulos the current value
+    VarMutateMod {
+        ident: (String, Span),
+        value: Expr,
+    },
+
     /// An if statement
     If {
         cond: Expr,

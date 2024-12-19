@@ -13,6 +13,7 @@ pub enum TExpr {
     Add(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>), Sub(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>),
     Mul(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>),
     Div(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>),
+    Mod(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>),
     Concat(Box<Typed<Spanned<TExpr>>>, Box<Typed<Spanned<TExpr>>>),
 
     Neg(Box<Typed<Spanned<TExpr>>>),
@@ -408,6 +409,45 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, func_table: &Fu
                 idx1 + idx + 2, // the current idx (accounting for offsets)
             )
         },
+        EO::Modulo => {
+            // wrap the left-hand side of this operation
+            let (lhs, idx) = wrap_expr(&asa[1..], type_table, func_table, var_table)?;
+            // wrap the rigth-hand side of this operation
+            let (rhs, idx1) = wrap_expr(&asa[idx+2..], type_table, func_table, var_table)?;
+
+            // make sure lhs is of type number, otherwise throw error
+            if lhs.1 != Type::Number {
+                return Err(Error::ArithmeticNonNumber {
+                    oper_span: asa[0].info.span.clone(),
+                    oper_type: "divide",
+                    value_span: lhs.0.1.clone(),
+                    value_type: lhs.1,
+                });
+            }
+
+            // make sure rhs is of type number, otherwise throw error
+            if rhs.1 != Type::Number {
+                return Err(Error::ArithmeticNonNumber {
+                    oper_span: asa[0].info.span.clone(),
+                    oper_type: "divide",
+                    value_span: rhs.0.1.clone(),
+                    value_type: rhs.1,
+                });
+            }
+
+            // return typed add operation
+            let span = lhs.0.1.start..rhs.0.1.end;
+            (
+                (
+                    (
+                        TExpr::Mod(Box::new(lhs), Box::new(rhs)), // value
+                        span, // span
+                    ),
+                    Type::Number, // type
+                ),
+                idx1 + idx + 2, // the current idx (accounting for offsets)
+            )
+        },
 
         // A change of pace where only strings are allowed instead of numbers
         EO::Concat => {
@@ -717,6 +757,6 @@ pub fn wrap_expr(asa: &[Node<ExprOper>], type_table: &TypeTable, func_table: &Fu
             )
         },
 
-        _ => todo!(),
+        EO::DotAccess => unimplemented!("nuh uh"),
     })
 }

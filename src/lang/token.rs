@@ -49,6 +49,10 @@ pub enum Token {
     Slash,
     #[token("/=")]
     DivEq,
+    #[token("%")]
+    Modulo,
+    #[token("%=")]
+    ModuloEq,
 
     // `-` symbols
     #[token("-")]
