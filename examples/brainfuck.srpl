@@ -1,0 +1,444 @@
+main {
+	// ask for the brainfuck source code
+	var src = input!("brainfuck source code:");
+
+	// ask for the brainfuck input
+	var input = input!("input:");
+	var mut input_idx = 0;
+
+	// initialise the callback stack and skip counter
+	var mut callback: [num] = [0];
+	list_remove!(callback, 0);
+	var mut skip = 0;
+
+	// declare the memory tape and pointer
+	var mut memory: [num] = [0];
+	list_remove!(memory, 0);
+	var mut pointer = 0;
+
+	// initialise the memory tape (30000 digits)
+	var mut i = 0;
+	while (i < 30000) {
+		list_push!(memory, 0);
+		mut i += 1;
+	};
+
+	// initialise stdout
+	var mut stdout = "";
+
+	// main execution loop
+	var mut idx = 0;
+	while (idx < str_len!(src)) {
+		var current = str_get!(src, idx);
+		var mut loop = false;
+		var mut skipped = false;
+
+		// if in skipping a loop, and a loop closing bracket is found, then decrement the skip counter, otherwise, if an opening bracket is found, then increment the skip counter
+		if (skip != 0)
+		if (current == "[")
+			mut skip += 1
+		else if (current == "]") {
+			mut skip -= 1;
+			mut skipped = true;
+		};
+
+		// check for operators
+		if (skip == 0 && !skipped)
+		if (current == ">")
+			mut pointer += 1
+		else if (current == "<")
+			mut pointer -= 1
+		else if (current == "+") // increment by one
+			list_replace!(memory, pointer, list_get!(memory, pointer) + 1)
+		else if (current == "-")
+			list_replace!(memory, pointer, list_get!(memory, pointer) - 1)
+		else if (current == ",") {
+			if (input_idx < str_len!(input))
+				list_replace!(memory, pointer, from_ascii(str_get!(input, input_idx)))
+			else
+				list_replace!(memory, pointer, 0);
+			mut input_idx += 1;
+		} else if (current == ".")
+			mut stdout = stdout <> to_ascii(list_get!(memory, pointer))
+		else if (current == "[" && list_get!(memory, pointer) != 0) // start a loop by pushing to the callback stack
+			list_push!(callback, idx)
+		else if (current == "[")
+			mut skip = 1
+		else if (current == "]") // set the loop flag
+			mut loop = true;
+
+		// check for loop
+		if (loop) {
+			var last = list_len!(callback) - 1;
+
+			// make sure there is a matching brace
+			if (last < 0)
+				panic!("error: unmatched brace at " <> as_str!(idx));
+
+			// only loop if the current memory cell is zero
+			if (list_get!(memory, pointer) != 0)
+				mut idx = list_get!(callback, last) // loop
+			else
+				list_remove!(callback, last); // otherwise move on
+
+			// update the loop flag
+			mut loop = false;
+		};
+
+		// increment the index
+		mut idx += 1;
+	};
+
+	// make sure all of the loops have matching brackets
+	if (list_len!(callback) > 0)
+		panic!("error: unmatched brace at " <> as_str!(list_get!(callback, 0)));
+	if (skip != 0)
+		panic!("error: unmatched brace");
+
+	// print stdout
+	println!(stdout);
+}
+
+// convert a number into it's ascii encoding
+fn to_ascii(num: num) -> str {
+	var mut result = "";
+
+	if (num == 32)
+		mut result = " "
+	else if (num == 33)
+		mut result = "!"
+	else if (num == 34)
+		mut result = "\""
+	else if (num == 35)
+		mut result = "#"
+	else if (num == 36)
+		mut result = "$"
+	else if (num == 37)
+		mut result = "%"
+	else if (num == 38)
+		mut result = "&"
+	else if (num == 39)
+		mut result = "'"
+	else if (num == 40)
+		mut result = "("
+	else if (num == 41)
+		mut result = ")"
+	else if (num == 42)
+		mut result = "*"
+	else if (num == 43)
+		mut result = "+"
+	else if (num == 44)
+		mut result = ","
+	else if (num == 45)
+		mut result = "-"
+	else if (num == 46)
+		mut result = "."
+	else if (num == 47)
+		mut result = "/"
+	else if (num == 48)
+		mut result = "0"
+	else if (num == 49)
+		mut result = "1"
+	else if (num == 50)
+		mut result = "2"
+	else if (num == 51)
+		mut result = "3"
+	else if (num == 52)
+		mut result = "4"
+	else if (num == 53)
+		mut result = "5"
+	else if (num == 54)
+		mut result = "6"
+	else if (num == 55)
+		mut result = "7"
+	else if (num == 56)
+		mut result = "8"
+	else if (num == 57)
+		mut result = "9"
+	else if (num == 58)
+		mut result = ":"
+	else if (num == 59)
+		mut result = ";"
+	else if (num == 60)
+		mut result = "<"
+	else if (num == 61)
+		mut result = "="
+	else if (num == 62)
+		mut result = ">"
+	else if (num == 63)
+		mut result = "?"
+	else if (num == 64)
+		mut result = "@"
+	else if (num == 65)
+		mut result = "A"
+	else if (num == 66)
+		mut result = "B"
+	else if (num == 67)
+		mut result = "C"
+	else if (num == 68)
+		mut result = "D"
+	else if (num == 69)
+		mut result = "E"
+	else if (num == 70)
+		mut result = "F"
+	else if (num == 71)
+		mut result = "G"
+	else if (num == 72)
+		mut result = "H"
+	else if (num == 73)
+		mut result = "I"
+	else if (num == 74)
+		mut result = "J"
+	else if (num == 75)
+		mut result = "K"
+	else if (num == 76)
+		mut result = "L"
+	else if (num == 77)
+		mut result = "M"
+	else if (num == 78)
+		mut result = "N"
+	else if (num == 79)
+		mut result = "O"
+	else if (num == 80)
+		mut result = "P"
+	else if (num == 81)
+		mut result = "Q"
+	else if (num == 82)
+		mut result = "R"
+	else if (num == 83)
+		mut result = "S"
+	else if (num == 84)
+		mut result = "T"
+	else if (num == 85)
+		mut result = "U"
+	else if (num == 86)
+		mut result = "V"
+	else if (num == 87)
+		mut result = "W"
+	else if (num == 88)
+		mut result = "X"
+	else if (num == 89)
+		mut result = "Y"
+	else if (num == 90)
+		mut result = "Z"
+	else if (num == 91)
+		mut result = "["
+	else if (num == 92)
+		mut result = "\\"
+	else if (num == 93)
+		mut result = "]"
+	else if (num == 94)
+		mut result = "^"
+	else if (num == 95)
+		mut result = "_"
+	else if (num == 96)
+		mut result = "`"
+	else if (num == 97)
+		mut result = "a"
+	else if (num == 98)
+		mut result = "b"
+	else if (num == 99)
+		mut result = "c"
+	else if (num == 100)
+		mut result = "d"
+	else if (num == 101)
+		mut result = "e"
+	else if (num == 102)
+		mut result = "f"
+	else if (num == 103)
+		mut result = "g"
+	else if (num == 104)
+		mut result = "h"
+	else if (num == 105)
+		mut result = "i"
+	else if (num == 106)
+		mut result = "j"
+	else if (num == 107)
+		mut result = "k"
+	else if (num == 108)
+		mut result = "l"
+	else if (num == 109)
+		mut result = "m"
+	else if (num == 110)
+		mut result = "n"
+	else if (num == 111)
+		mut result = "o"
+	else if (num == 112)
+		mut result = "p"
+	else if (num == 113)
+		mut result = "q"
+	else if (num == 114)
+		mut result = "r"
+	else if (num == 115)
+		mut result = "s"
+	else if (num == 116)
+		mut result = "t"
+	else if (num == 117)
+		mut result = "u"
+	else if (num == 118)
+		mut result = "v"
+	else if (num == 119)
+		mut result = "w"
+	else if (num == 120)
+		mut result = "x"
+	else if (num == 121)
+		mut result = "y"
+	else if (num == 122)
+		mut result = "z"
+	else if (num == 123)
+		mut result = "{"
+	else if (num == 124)
+		mut result = "|"
+	else if (num == 125)
+		mut result = "}"
+	else if (num == 126)
+		mut result = "~";
+
+	result
+}
+
+// converts a character into it's ascii encoding (as a number)
+fn from_ascii(char: str) -> num {
+	var mut result = 0;
+
+	if (char == " ")
+		mut result = 32
+	else if (char == "!")
+		mut result = 33
+	else if (char == "\"")
+		mut result = 34
+	else if (char == "#")
+		mut result = 35
+	else if (char == "$")
+		mut result = 36
+	else if (char == "%")
+		mut result = 37
+	else if (char == "&")
+		mut result = 38
+	else if (char == "'")
+		mut result = 39
+	else if (char == "(")
+		mut result = 40
+	else if (char == ")")
+		mut result = 41
+	else if (char == "*")
+		mut result = 42
+	else if (char == "+")
+		mut result = 43
+	else if (char == ",")
+		mut result = 44
+	else if (char == "-")
+		mut result = 45
+	else if (char == ".")
+		mut result = 46
+	else if (char == "/")
+		mut result = 47
+	else if (char == "0")
+		mut result = 48
+	else if (char == "1")
+		mut result = 49
+	else if (char == "2")
+		mut result = 50
+	else if (char == "3")
+		mut result = 51
+	else if (char == "4")
+		mut result = 52
+	else if (char == "5")
+		mut result = 53
+	else if (char == "6")
+		mut result = 54
+	else if (char == "7")
+		mut result = 55
+	else if (char == "8")
+		mut result = 56
+	else if (char == "9")
+		mut result = 57
+	else if (char == ":")
+		mut result = 58
+	else if (char == ";")
+		mut result = 59
+	else if (char == "<")
+		mut result = 60
+	else if (char == "=")
+		mut result = 61
+	else if (char == ">")
+		mut result = 62
+	else if (char == "?")
+		mut result = 63
+	else if (char == "@")
+		mut result = 64
+	else if (char == "[")
+		mut result = 91
+	else if (char == "\\")
+		mut result = 92
+	else if (char == "]")
+		mut result = 93
+	else if (char == "^")
+		mut result = 94
+	else if (char == "_")
+		mut result = 95
+	else if (char == "`")
+		mut result = 96
+	else if (char == "a")
+		mut result = 97
+	else if (char == "b")
+		mut result = 98
+	else if (char == "c")
+		mut result = 99
+	else if (char == "d")
+		mut result = 100
+	else if (char == "e")
+		mut result = 101
+	else if (char == "f")
+		mut result = 102
+	else if (char == "g")
+		mut result = 103
+	else if (char == "h")
+		mut result = 104
+	else if (char == "i")
+		mut result = 105
+	else if (char == "j")
+		mut result = 106
+	else if (char == "k")
+		mut result = 107
+	else if (char == "l")
+		mut result = 108
+	else if (char == "m")
+		mut result = 109
+	else if (char == "n")
+		mut result = 110
+	else if (char == "o")
+		mut result = 111
+	else if (char == "p")
+		mut result = 112
+	else if (char == "q")
+		mut result = 113
+	else if (char == "r")
+		mut result = 114
+	else if (char == "s")
+		mut result = 115
+	else if (char == "t")
+		mut result = 116
+	else if (char == "u")
+		mut result = 117
+	else if (char == "v")
+		mut result = 118
+	else if (char == "w")
+		mut result = 119
+	else if (char == "x")
+		mut result = 120
+	else if (char == "y")
+		mut result = 121
+	else if (char == "z")
+		mut result = 122
+	else if (char == "{")
+		mut result = 123
+	else if (char == "|")
+		mut result = 124
+	else if (char == "}")
+		mut result = 125
+	else if (char == "~")
+		mut result = 126;
+
+	result
+}
